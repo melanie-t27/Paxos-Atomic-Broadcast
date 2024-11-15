@@ -1,3 +1,4 @@
+'''
 from abc import abstractmethod
 import sys
 import socket
@@ -6,6 +7,7 @@ from .messages import Message
 from messages import *
 import pickle
 import math
+from collections import defaultdict
 
 def mcast_receiver(hostport  : tuple[str, int]):
     """create a multicast socket listening to the address"""
@@ -31,6 +33,8 @@ class Participant:
         self.id = id
         # Configuration
         self.config = config
+        # Id instance
+        self.id_instance = -1
 
     @abstractmethod
     def receive_message(self, message : bytes):
@@ -52,12 +56,12 @@ class Participant:
 class Acceptor(Participant):
     def __init__(self, id : int, config : dict[str, tuple[str, int]]):
         super().__init__(id, config)
-        # The highest-numbered round in which the acceptor has casted a vote
-        self.accepted_round : int = 0
-        # The value this Acceptor has accepted (if any)
-        self.accepted_value = -1
-        # Round number to track which round this Acceptor is in
-        self.round : int = 0
+        # The highest-numbered round in which the acceptor has casted a vote, one for each instance
+        self.v_rnd : list[int] = list()
+        # The value this Acceptor has accepted (if any), one for each instance
+        self.v_val : list[int] = list()
+        # Round number to track which round this Acceptor is in, one for each instance
+        self.round : list[int] = list()
         # Sockets
         self.r = mcast_receiver(config["acceptors"])
         self.s = mcast_sender()
@@ -75,41 +79,45 @@ class Acceptor(Participant):
         self.s.sendto(pickle.dumps(Message), self.config["proposers"])
 
     def handle_prepare(self, message : Message1A):
-        if message.c_rnd > self.round:
-            self.round = message.c_rnd
-            msg : Message = Message1B(self.id, self.round, self.accepted_round, self.accepted_value)
+        if message.c_rnd > self.round[message.id_instance]:
+            self.round[message.id_instance] = message.c_rnd
+            msg : Message = Message1B(self.id, message.id_instance, self.round[message.id_instance],
+                                       self.v_rnd[message.id_instance], self.v_val)
             self.send_message(msg)
 
     def handle_propose(self, message : Message2A):
-        if message.c_rnd >= self.round:
-            self.accepted_round = message.c_rnd
-            self.accepted_value = message.c_val
-            msg : Message = Message2B(self.id, self.accepted_round, self.accepted_value)
+        if message.c_rnd >= self.round[message.id_instance]:
+            self.v_rnd[message.id_instance] = message.c_rnd
+            self.v_val = message.c_val
+            msg : Message = Message2B(self.id, message.id_instance, self.v_rnd[message.id_instance], self.v_val)
             self.send_message(msg)
 
     def run(self):
         print("Process {}-{} started.".format(self.__class__.__name__, self.id))
         sys.stdout.flush()
-        # FIXME
+        while True:
+            # Acceptor listens for incoming messages
+            message = self.r.recv(1024)
+            self.receive_message(message)
 
         
 # Proposer Class: A participant that proposes a value to be accepted by the acceptors
 class Proposer(Participant):
-    def __init__(self, id : int, config : dict[str, tuple[str, int]], 
+    def __init__(self, id : int, config : dict[str, tuple[str, int]],
                  num_acceptors : int, num_proposers : int):
         super().__init__(id, config)
         # Obtained value from client
-        self.v : int = -1
+        self.v : list[int] = list()
         # Proposal round number (unique and increasing within proposers of the same paxos instance)
         self.c_rnd : int = id
         # Proposal value for this proposer picked at round proposal_round
-        self.c_val : int = 0
+        self.c_val : list[int] = list()
         # Size of the quorum
         self.quorum_size : int = math.ceil(num_acceptors / 2) 
         # Number of proposers
         self.num_proposers : int = num_proposers
         # Dictionary to track responses per round
-        self.round_responses: set[tuple[int,int]] = set()
+        self.round_responses: set[tuple[int,list[int]]] = set()
         # Sockets
         self.r = mcast_receiver(config["proposers"])
         self.s = mcast_sender()
@@ -140,7 +148,7 @@ class Proposer(Participant):
                 else:
                     self.c_val = list(v)[0][1] # Get the second element of the tuple, they are all equal
                 self.round_responses = set()
-                msg: Message = Message2A(self.id, self.c_rnd, self.c_val)
+                msg: Message = Message2A(self.id, message.id_instance, self.c_rnd, self.c_val)
                 self.send_message(msg)
                 
         
@@ -148,36 +156,36 @@ class Proposer(Participant):
         if message.v_rnd == self.c_rnd:
             self.round_responses.add((message.v_rnd, message.v_val)) 
             if len(self.round_responses) >= self.quorum_size:
-                msg: Message = DecisionMessage(self.id, list(self.round_responses)[0][1])
+                msg: Message = DecisionMessage(self.id, message.id_instance, list(self.round_responses)[0][1])
                 self.round_responses = set()
                 self.send_message(msg)
 
 
     def handle_client(self, message : ClientMessage):
-        # TODO
-        pass
+        #self.v.append(message.values)  # Set the proposed value from the client
+        self.propose()
 
     def propose(self):
         # Increment the proposal number (acts as the round number) for each new proposal
         self.c_rnd = self.c_rnd + self.num_proposers
         # Send prepare messages to all acceptors
-        msg : Message = Message1A(self.id, self.c_rnd)
+        msg : Message = Message1A(self.id, self.id_instance, self.c_rnd)
         self.send_message(msg)
 
     def run(self):
         print("Process {}-{} started.".format(self.__class__.__name__, self.id))
         sys.stdout.flush()
-        # TODO
+        while True:
+            message = self.r.recv(1024)
+            self.receive_message(message)
 
 
 # Learner Class: A participant that learns the value once it has been accepted
 class Learner(Participant):
-    def __init__(self, id : int, config  : dict[str, tuple[str, int]]):
+    def __init__(self, id : int, config : dict[str, tuple[str, int]]):
         super().__init__(id, config)
         # The value learned by the Learner once it's accepted
-        self.learned_value = None
-        # Round number to track which round this Learner is in
-        self.round = 0
+        self.learned_values : list[int] = list()
         # Sockets
         self.r = mcast_receiver(config["learners"])
 
@@ -188,17 +196,22 @@ class Learner(Participant):
     def receive_message(self, message: bytes):
         msg: Message = pickle.loads(message)
         if isinstance(msg, DecisionMessage):
-            self.learned_value = msg.v_val
+            self.learned_values = msg.v_val
 
     def run(self):
         print("Process {}-{} started.".format(self.__class__.__name__, self.id))
         sys.stdout.flush()
-        # TODO
+        while True:
+            message = self.r.recv(1024)
+            self.receive_message(message)
+
 
 
 class Client(Participant):
     def __init__(self, id: int, config: dict[str, tuple[str, int]]):
         super().__init__(id, config)
+        # Vector of all values 
+        self.values : list[int] = list()
         # Socket
         self.s = mcast_sender()
 
@@ -208,8 +221,8 @@ class Client(Participant):
     def send_message(self, message: Message):
         self.s.sendto(pickle.dumps(message), self.config["proposers"])
 
-    def submit_value(self, value: int):
-        message: Message = ClientMessage(self.id, value)
+    def submit_value(self, values: list[int]):
+        message: Message = ClientMessage(self.id, 0, values)
         self.send_message(message)
 
     def run(self):
@@ -217,6 +230,8 @@ class Client(Participant):
         while True:
             try:
                 value = int(input())
-                self.submit_value(value)
+                self.values.append(value)
             except ValueError:
                 print("Please enter an integer.")
+        self.submit_value(self.values)
+'''

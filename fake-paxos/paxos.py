@@ -12,54 +12,6 @@ def parse_cfg(cfgpath : str):
     return cfg
 
 
-# ----------------------------------------------------
-
-'''
-def acceptor(config : dict[str, tuple[str, int]], id : int):
-    print("-> acceptor", id)
-    state = {}
-    r = mcast_receiver(config["acceptors"])
-    s = mcast_sender()
-    while True:
-        msg = r.recv(2**16)
-        # fake acceptor! just forwards messages to the learner
-        if id == 1:
-            print("acceptor: sending %s to learners", msg) 
-            s.sendto(msg, config["learners"])
-
-
-def proposer(config, id):
-    print("-> proposer", id)
-    r = mcast_receiver(config["proposers"])
-    s = mcast_sender()
-    while True:
-        print("Proposer ", id, " waiting...")
-        msg = r.recv(2**16)
-        # fake proposer! just forwards message to the acceptor
-        if id == 1:
-            print("proposer: sending %s to acceptors", (msg))
-            
-            s.sendto(msg, config["acceptors"])
-
-
-def learner(config, id):
-    print("-> learner", id)
-    r = mcast_receiver(config["learners"])
-    while True:
-        msg = r.recv(2**16)
-        print(msg)
-        sys.stdout.flush()
-
-
-def client(config, id):
-    print("-> client ", id)
-    s = mcast_sender()
-    for value in sys.stdin:
-        value = value.strip()
-        print("client: sending %s to proposers" % (value))
-        s.sendto(value.encode(), config["proposers"])
-    print("client done.")
-'''
 '''
 if __name__ == "__main__":
     cfgpath = sys.argv[1]
