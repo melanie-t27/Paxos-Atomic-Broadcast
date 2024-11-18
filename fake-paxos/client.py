@@ -56,6 +56,3 @@ class Client:
         self.submit_values(self.values)
             #time.sleep(1)   
             
-
-
-                 

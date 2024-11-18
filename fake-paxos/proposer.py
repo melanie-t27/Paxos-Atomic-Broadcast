@@ -41,7 +41,7 @@ class Proposer:
         # Send prepare messages to all acceptors
         msg : Message = Message1A(self.id_instance, self.id, self.c_rnd)
         self.send_message(msg)
-        print(f"Proposer {self.id}-({self.id_instance}) send proposal with c-rnd = {self.c_rnd}", flush=True)
+        print(f"Proposer {self.id}({self.id_instance}) send proposal with c-rnd = {self.c_rnd}", flush=True)
 
     def handle_promise(self):
         k = max(t[0] for t in self.round_responses) 
@@ -53,7 +53,7 @@ class Proposer:
         self.round_responses = set()
         msg: Message = Message2A(self.id_instance, self.id,  self.c_rnd, self.c_val)
         self.send_message(msg)
-        print(f"Proposer {self.id}-({self.id_instance}) sends 2A: c_rnd = {self.c_rnd}, c_val = {self.c_val}", flush=True)
+        print(f"Proposer {self.id}({self.id_instance}) sends 2A: c_rnd = {self.c_rnd}, c_val = {self.c_val}", flush=True)
                 
     def handle_acceptance(self):
         # Prepare message with the right values
@@ -62,7 +62,7 @@ class Proposer:
         self.round_responses = set()
         # Send messages to all learners
         self.send_message(msg)
-        print(f"Proposer {self.id}-({self.id_instance}) sends decision message with val = {list(self.round_responses)[0][1]}", flush=True)
+        print(f"Proposer {self.id}({self.id_instance}) sends decision message with val = {list(self.round_responses)[0][1]}", flush=True)
         # Save the decided value
         self.d_val.extend(list(self.round_responses)[0][1])
         # Delete the decided values from v 
@@ -86,7 +86,7 @@ class InitialState(State):
         self.proposer = proposer
         self.timer = threading.Timer(1, self.on_timeout)
         self.timer.start()
-        print(f"Proposer {self.proposer.id}-({self.proposer.id_instance}) waiting for client messages...", flush=True)
+        print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) waiting for client messages...", flush=True)
 
     def on_event(self, event: Message):
         with self.proposer.lock:
@@ -98,7 +98,7 @@ class InitialState(State):
         
     def on_timeout(self):
         with self.proposer.lock:
-            print(f"Proposer {self.proposer.id}-({self.proposer.id_instance}) timeout in initial phase", flush=True)
+            print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) timeout in initial phase", flush=True)
             if self.proposer.v != list():
                 self.timer.cancel()
                 self.proposer.set_state(Phase1AState(self.proposer))
@@ -109,10 +109,10 @@ class InitialState(State):
 class Phase1AState(State):
     def __init__(self, proposer: Proposer):
         self.proposer = proposer
-        print(f"Proposer {self.proposer.id}-({self.proposer.id_instance}) received client messages and start phase 1A", flush=True)
+        print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) received client messages and start phase 1A", flush=True)
         # Sends message 1A to all acceptors
         self.proposer.handle_propose()
-        print(f"Proposer {self.proposer.id}-({self.proposer.id_instance}) waiting for 1B messages...", flush=True)
+        print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) waiting for 1B messages...", flush=True)
         # Start timer for message 1B arrival
         self.timer = threading.Timer(5, self.on_timeout)
         self.timer.start()
@@ -121,19 +121,19 @@ class Phase1AState(State):
     def on_event(self, event: Message):
         # Wait for a quorum of messages 1B from the acceptors
         with self.proposer.lock:
-            if isinstance(event, Message1B) and event.id_instance == self.proposer.id_instance:
-                print(f"Proposer {self.proposer.id}-({self.proposer.id_instance}) received a 1B message, waiting for quorum", flush=True)
-                if event.rnd == self.proposer.c_rnd:
+            print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) phase 1A on_event with message 1B = {isinstance(event, Message1B)}", flush=True)
+            if isinstance(event, Message1B):
+                print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) received a 1B message, waiting for quorum", flush=True)
+                if event.rnd == self.proposer.c_rnd and event.id_instance == self.proposer.id_instance:
                     self.proposer.round_responses.add((event.v_rnd, event.v_val)) 
                     if len(self.proposer.round_responses) >= self.proposer.quorum:
-                        print(f"Proposer {self.proposer.id}-({self.proposer.id_instance}) received a quorum of 1B messages", flush=True)
+                        print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) received a quorum of 1B messages and changes state to 2A...", flush=True)
                         self.timer.cancel()
-                        print(f"Proposer {self.proposer.id}-({self.proposer.id_instance}) changing state to 2A...", flush=True)
                         self.proposer.set_state(Phase2AState(self.proposer))
     
     def on_timeout(self):
         with self.proposer.lock:
-            print(f"Proposer {self.proposer.id}-({self.proposer.id_instance}) timeout in phase 1A", flush=True)
+            print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) timeout in phase 1A", flush=True)
             # try another time to propose its values
             self.proposer.round_responses = set()
             self.proposer.handle_propose()
@@ -146,7 +146,7 @@ class Phase2AState(State):
         self.proposer = proposer
         # Send message 2A to all acceptors
         self.proposer.handle_promise()
-        print(f"Proposer {self.proposer.id}-({self.proposer.id_instance}) waiting for 2B messages...", flush=True)
+        print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) waiting for 2B messages...", flush=True)
         # Set a timer for 2B message arrival
         self.timer = threading.Timer(1, self.on_timeout)
         self.timer.start()
@@ -177,14 +177,14 @@ class Phase2AState(State):
             if isinstance(event, Message2B) and event.id_instance == self.proposer.id_instance:
                 self.proposer.round_responses.add((event.v_rnd, event.v_val)) 
                 if self.check_quorum():
-                    print(f"Proposer {self.proposer.id}-({self.proposer.id_instance}) received a quorum of 2B messages", flush=True)
+                    print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) received a quorum of 2B messages", flush=True)
                     self.timer.cancel()
-                    print(f"Proposer {self.proposer.id}-({self.proposer.id_instance}) changing state to 3...", flush=True)
+                    print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) changing state to 3...", flush=True)
                     self.proposer.set_state(Phase3State(self.proposer))
         
     def on_timeout(self):
         with self.proposer.lock:
-            print(f"Proposer {self.proposer.id}-({self.proposer.id_instance}) timeout in phase 2A", flush=True)
+            print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) timeout in phase 2A", flush=True)
             self.timer = threading.Timer(1, self.on_timeout)
             self.timer.start()
         
@@ -194,7 +194,7 @@ class Phase3State(State):
     def __init__(self, proposer: Proposer):
         self.proposer = proposer
         self.proposer.handle_acceptance()
-        print(f"Proposer {self.proposer.id}-({self.proposer.id_instance}) changing state to initial after sending decision...", flush=True)
+        print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) changing state to initial after sending decision...", flush=True)
         self.proposer.set_state(InitialState(self.proposer))
 
     def on_event(self, event: Message):
