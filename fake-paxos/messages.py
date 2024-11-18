@@ -1,6 +1,3 @@
-
-
-
 class Message:
     def __init__(self, id_instance: int, id_source: int): 
         self.id_instance = id_instance

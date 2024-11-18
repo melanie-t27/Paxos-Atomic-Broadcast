@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 
-from participants import *
+from learner import *
+from acceptor import *
+from client import *
+from proposer import *
+import sys
 
 
 def parse_cfg(cfgpath : str):
@@ -12,7 +16,6 @@ def parse_cfg(cfgpath : str):
     return cfg
 
 
-'''
 if __name__ == "__main__":
     cfgpath = sys.argv[1]
     config = parse_cfg(cfgpath)
@@ -26,5 +29,6 @@ if __name__ == "__main__":
         rolefunc = Learner
     elif role == "client":
         rolefunc = Client
-    rolefunc(config, id)
-'''
+    else:
+        raise Exception("Invalid input!")
+    rolefunc(id, config)
