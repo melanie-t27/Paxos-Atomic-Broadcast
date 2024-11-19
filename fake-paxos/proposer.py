@@ -5,6 +5,7 @@ import pickle
 
 NUM_ACCEPTORS = 3
 
+########################## PROPOSER IMPLEMENTED AS A FINITE STATE MACHINE ##########################
 class Proposer:
     def __init__(self, id: int, config: dict[str, tuple[str, int]]):
         self.id = id
@@ -12,12 +13,14 @@ class Proposer:
         self.quorum : int = math.ceil(NUM_ACCEPTORS / 2) 
         self.round_responses: list[tuple[int, tuple[int,...]]] = list()
         self.id_instance = 0
-        print(f"Proposer {self.id} start...", flush=True)
+        # Timer used to updated learners joined the system later or if the decision messages were lost
+        self.timer = threading.Timer(1, self.update_learners)
+        self.timer.start()
         # Sockets
         self.r = mcast_receiver(config["proposers"])
         self.s = mcast_sender()
         # Obtained value from client
-        self.v : list[int] = list()
+        self.v : list[int] = list() # TODO change this to list[tuple[int,int]] to handle duplicate messages between clients
         # Proposal round number (unique and increasing within proposers of the same paxos instance)
         self.c_rnd : int = id
         # Proposal value for this proposer picked at round proposal_round
@@ -73,17 +76,26 @@ class Proposer:
         self.c_rnd = self.id
         # Empty the messaged at the current round
         self.round_responses = list()
+
+    def update_learners(self):
+        # Send messages to all learners
+        msg: Message = DecisionMessage(self.id_instance - 1, self.d_val)
+        self.send_message(msg)
+        # Restart timer
+        self.timer = threading.Timer(1, self.update_learners)
+        self.timer.start()
                 
     def set_state(self, state : State):
         self.state = state
     
     def run(self):
+        print(f"Proposer {self.id} start...", flush=True)
         while True:
             msg = self.r.recv(2**16)
             self.state.on_event(pickle.loads(msg))
 
 
-########################## STATES FOR STATE MACHINE ##########################
+########################## STATES FOR FINITE STATE MACHINE ##########################
 
 class InitialState(State):
     def __init__(self, proposer: Proposer):

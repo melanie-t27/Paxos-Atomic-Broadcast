@@ -8,7 +8,6 @@ class Client:
     def __init__(self, id: int, config: dict[str, tuple[str, int]]):
         self.id = id
         self.config = config
-        print(f"Client {self.id} start...")
         # Vector of all values 
         self.values : list[int] = list()
         # Socket
@@ -35,6 +34,7 @@ class Client:
     '''
 
     def run(self, filename: str):
+        print(f"Client {self.id} start...")
         try:
             with open(filename, 'r') as file:
                 # Read all lines from the file

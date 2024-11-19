@@ -23,10 +23,11 @@ if __name__ == "__main__":
 
     threading.Thread(target = client.run, args=["test_input"]).start()
     threading.Thread(target = learner1.run).start()
-    threading.Thread(target = learner2.run).start()
     threading.Thread(target = proposer1.run).start()
     threading.Thread(target = proposer2.run).start()
     threading.Thread(target = acceptor1.run).start()
     threading.Thread(target = acceptor2.run).start()
     threading.Thread(target = acceptor3.run).start()
+    time.sleep(5)
+    threading.Thread(target = learner2.run).start()
     time.sleep(10)

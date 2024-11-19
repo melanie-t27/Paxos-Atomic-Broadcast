@@ -4,6 +4,7 @@ from collections import defaultdict
 import threading
 import pickle
 
+########################## ACCEPTOR IMPLEMENTED AS A FINITE STATE MACHINE ##########################
 class Acceptor:
     def __init__(self, id: int, config: dict[str, tuple[str, int]]):
         self.id = id
@@ -54,7 +55,7 @@ class Acceptor:
             msg : bytes = self.r.recv(2**16)
             self.state.on_event(pickle.loads(msg))
 
-########################## STATES FOR STATE MACHINE ##########################
+########################## STATES FOR FINITE STATE MACHINE ##########################
 
 class Phase1BState(State):
     def __init__(self, acceptor: Acceptor):

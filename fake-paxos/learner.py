@@ -8,11 +8,9 @@ class Learner:
         self.config = config
         # Sockets
         self.r = mcast_receiver(config["learners"])
-        print(f"Learner {self.id} start...")
         # Decided value and related instance
         self.d_val : list[int] = list()
         self.id_instance = -1
-
 
     def receive_decision(self, decision : DecisionMessage):
         if decision.id_instance > self.id_instance:
@@ -21,6 +19,7 @@ class Learner:
             print(f"Learner {self.id} received decided value for {decision.id_instance} instace: {self.d_val}")
 
     def run(self):
+        print(f"Learner {self.id} start...")
         while True:
             msg : bytes = self.r.recv(2**16)
             message : Message = pickle.loads(msg)
