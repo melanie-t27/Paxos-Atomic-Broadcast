@@ -1,6 +1,5 @@
 from utils import *
 from communication import *
-from collections import defaultdict
 import pickle
 
 class Learner:
@@ -10,13 +9,16 @@ class Learner:
         # Sockets
         self.r = mcast_receiver(config["learners"])
         print(f"Learner {self.id} start...")
-        # Decided value for each instance
-        self.d_val : defaultdict[int,list[int]] = defaultdict(list)
+        # Decided value and related instance
+        self.d_val : list[int] = list()
+        self.id_instance = -1
+
 
     def receive_decision(self, decision : DecisionMessage):
-        if decision.id_instance not in self.d_val.keys():
-            self.d_val[decision.id_instance] = decision.v_val
-            print(f"Learner {self.id} received decided value for {decision.id_instance} instace: {self.d_val[decision.id_instance]}")
+        if decision.id_instance > self.id_instance:
+            self.d_val = decision.v_val
+            self.id_instance = decision.id_instance
+            print(f"Learner {self.id} received decided value for {decision.id_instance} instace: {self.d_val}")
 
     def run(self):
         while True:
