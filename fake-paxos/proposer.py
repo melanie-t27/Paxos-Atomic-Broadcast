@@ -11,7 +11,7 @@ class Proposer:
         self.id = id
         self.config = config
         self.quorum : int = math.ceil(NUM_ACCEPTORS / 2) 
-        self.round_responses: list[tuple[int, tuple[int,...]]] = list()
+        self.round_responses: list[tuple[int, tuple[tuple[int,int],...]]] = list()
         self.id_instance = 0
         # Timer used to updated learners joined the system later or if the decision messages were lost
         self.timer = threading.Timer(1, self.update_learners)
@@ -20,13 +20,13 @@ class Proposer:
         self.r = mcast_receiver(config["proposers"])
         self.s = mcast_sender()
         # Obtained value from client
-        self.v : list[int] = list() # TODO change this to list[tuple[int,int]] to handle duplicate messages between clients
+        self.v : list[tuple[int,int]] = list() # TODO change this to list[tuple[int,int]] to handle duplicate messages between clients
         # Proposal round number (unique and increasing within proposers of the same paxos instance)
         self.c_rnd : int = id
         # Proposal value for this proposer picked at round proposal_round
-        self.c_val : list[int] = list()
+        self.c_val : list[tuple[int,int]] = list()
         # Decided value
-        self.d_val :list[int] = list()
+        self.d_val :list[tuple[int,int]] = list()
         # Lock
         self.lock = threading.RLock()
         # State machine 
@@ -66,7 +66,7 @@ class Proposer:
         self.send_message(msg)
         print(f"Proposer {self.id}({self.id_instance}) sends decision message with val = {msg.v_val}", flush=True)
         
-    def handle_change_of_instance(self, v_val: list[int]):
+    def handle_change_of_instance(self, v_val: list[tuple[int,int]]):
         # Save the decided value
         self.d_val.extend(v_val)
         # Delete the decided values from v 
@@ -92,6 +92,7 @@ class Proposer:
         print(f"Proposer {self.id} start...", flush=True)
         while True:
             msg = self.r.recv(2**16)
+            print(f"received message, state = {self.state} ")
             self.state.on_event(pickle.loads(msg))
 
 
@@ -106,11 +107,17 @@ class InitialState(State):
 
     def on_event(self, event: Message):
         with self.proposer.lock:
+            print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) in on_event...")
             if isinstance(event, ClientMessage):
-                self.proposer.v.extend(value for value in event.values 
-                                    if value not in self.proposer.v and value not in self.proposer.d_val) 
-                self.timer.cancel()
-                self.proposer.set_state(Phase1AState(self.proposer))
+                # Create a set for faster membership checks
+                existing_entries : set[tuple[int,int]] = set(self.proposer.v).union(self.proposer.d_val)
+                # Check if the new value are not already in the values to be proposed or in the values already decided
+                self.proposer.v.extend((value,event.id_source) for value in event.values 
+                                    if (value, event.id_source) not in existing_entries) 
+                if self.proposer.v != list():
+                    self.timer.cancel()
+                    print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) received client {event.id_source} messages and start phase 1A with v = {self.proposer.v}", flush=True)
+                    self.proposer.set_state(Phase1AState(self.proposer))
         
     def on_timeout(self):
         with self.proposer.lock:
@@ -125,7 +132,6 @@ class InitialState(State):
 class Phase1AState(State):
     def __init__(self, proposer: Proposer):
         self.proposer = proposer
-        print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) received client messages and start phase 1A", flush=True)
         # Sends message 1A to all acceptors
         self.proposer.handle_propose()
         print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) waiting for 1B messages...", flush=True)
@@ -210,10 +216,10 @@ class Phase3State(State):
         self.proposer = proposer
         self.proposer.handle_acceptance()
         print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) changing state to initial after sending decision...", flush=True)
-        self.proposer.set_state(InitialState(self.proposer))
 
     def on_event(self, event: Message):
-        pass
+        with self.proposer.lock:
+            self.proposer.set_state(InitialState(self.proposer))
     
     def on_timeout(self):
         pass

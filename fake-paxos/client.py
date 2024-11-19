@@ -1,7 +1,7 @@
 from communication import *
 from messages import *
 import pickle
-#import time
+import time
 
 
 class Client:
@@ -51,8 +51,8 @@ class Client:
         except Exception as e:
             print(f"An unexpected error occurred: {e}")  
 
-        print(f"Client {self.id} sends values to proposers..")
-        #while True:
-        self.submit_values(self.values)
-            #time.sleep(1)   
+        while True:
+            print(f"Client {self.id} sends values to proposers..")
+            self.submit_values(self.values)
+            time.sleep(1)   
             

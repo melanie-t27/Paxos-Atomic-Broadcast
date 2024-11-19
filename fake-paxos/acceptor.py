@@ -9,12 +9,10 @@ class Acceptor:
     def __init__(self, id: int, config: dict[str, tuple[str, int]]):
         self.id = id
         self.config = config
-        self.id_instance = 0
-        print(f"Acceptor {self.id} start...", flush=True)
         # The highest-numbered round in which the acceptor has casted a vote, one for each instance
         self.v_rnd : defaultdict[int,int] = defaultdict(int)
         # The value this Acceptor has accepted (if any), one for each instance
-        self.v_val : defaultdict[int,list[int]] = defaultdict(list)
+        self.v_val : defaultdict[int,list[tuple[int,int]]] = defaultdict(list)
         # Round number to track which round this Acceptor is in, one for each instance
         self.round : defaultdict[int,int] = defaultdict(int)
         # Lock
@@ -51,6 +49,7 @@ class Acceptor:
         self.state = state
 
     def run(self):
+        print(f"Acceptor {self.id} start...", flush=True)
         while True:
             msg : bytes = self.r.recv(2**16)
             self.state.on_event(pickle.loads(msg))

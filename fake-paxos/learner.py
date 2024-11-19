@@ -8,8 +8,8 @@ class Learner:
         self.config = config
         # Sockets
         self.r = mcast_receiver(config["learners"])
-        # Decided value and related instance
-        self.d_val : list[int] = list()
+        # Decided value (each message is represented by its value and the client id that sent it) and related instance
+        self.d_val : list[tuple[int,int]] = list()
         self.id_instance = -1
 
     def receive_decision(self, decision : DecisionMessage):

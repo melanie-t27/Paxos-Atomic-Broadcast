@@ -10,7 +10,7 @@ class Message1A(Message):
 
 
 class Message1B(Message):
-    def __init__(self, id_instance: int, rnd: int, v_rnd: int, v_val: list[int]):
+    def __init__(self, id_instance: int, rnd: int, v_rnd: int, v_val: list[tuple[int,int]]):
         super().__init__(id_instance)
         self.v_rnd = v_rnd
         self.rnd = rnd
@@ -18,21 +18,21 @@ class Message1B(Message):
 
 
 class Message2A(Message):
-    def __init__(self, id_instance: int, c_rnd: int, c_val: list[int]):
+    def __init__(self, id_instance: int, c_rnd: int, c_val: list[tuple[int,int]]):
         super().__init__(id_instance)
         self.c_rnd = c_rnd
         self.c_val = c_val
 
 
 class Message2B(Message):
-    def __init__(self, id_instance: int, v_rnd: int, v_val: list[int]):
+    def __init__(self, id_instance: int, v_rnd: int, v_val: list[tuple[int,int]]):
         super().__init__(id_instance)
         self.v_rnd = v_rnd
         self.v_val = v_val
 
 
 class DecisionMessage(Message):
-    def __init__(self, id_instance: int, v_val: list[int]):
+    def __init__(self, id_instance: int, v_val: list[tuple[int,int]]):
         super().__init__(id_instance)
         self.v_val = v_val
 
