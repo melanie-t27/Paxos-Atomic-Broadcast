@@ -10,7 +10,7 @@ class Proposer:
         self.id = id
         self.config = config
         self.quorum : int = math.ceil(NUM_ACCEPTORS / 2) 
-        self.round_responses: set[tuple[int,list[int]]] = set()
+        self.round_responses: list[tuple[int, tuple[int,...]]] = list()
         self.id_instance = 0
         print(f"Proposer {self.id} start...", flush=True)
         # Sockets
@@ -49,22 +49,22 @@ class Proposer:
         if k == 0:
             self.c_val = self.v
         else:
-            self.c_val = list(v)[0][1] # Get the second element of the tuple, they are all equal
-        self.round_responses = set()
+            self.c_val = list(list(v)[0][1]) # Get the second element of the tuple, they are all equal
+        self.round_responses = list()
         msg: Message = Message2A(self.id_instance, self.id,  self.c_rnd, self.c_val)
         self.send_message(msg)
         print(f"Proposer {self.id}({self.id_instance}) sends 2A: c_rnd = {self.c_rnd}, c_val = {self.c_val}", flush=True)
                 
     def handle_acceptance(self):
         # Prepare message with the right values
-        msg: Message = DecisionMessage(self.id_instance, self.id, list(self.round_responses)[0][1])
+        msg: Message = DecisionMessage(self.id_instance, self.id, list(self.round_responses[0][1]))
         # Empty the messaged at the current round
-        self.round_responses = set()
+        self.round_responses = list()
         # Send messages to all learners
         self.send_message(msg)
-        print(f"Proposer {self.id}({self.id_instance}) sends decision message with val = {list(self.round_responses)[0][1]}", flush=True)
+        print(f"Proposer {self.id}({self.id_instance}) sends decision message with val = {msg.v_val}", flush=True)
         # Save the decided value
-        self.d_val.extend(list(self.round_responses)[0][1])
+        self.d_val.extend(msg.v_val)
         # Delete the decided values from v 
         self.v = [value for value in self.v if value not in self.d_val] 
         # Update instance id
@@ -114,18 +114,17 @@ class Phase1AState(State):
         self.proposer.handle_propose()
         print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) waiting for 1B messages...", flush=True)
         # Start timer for message 1B arrival
-        self.timer = threading.Timer(5, self.on_timeout)
+        self.timer = threading.Timer(1, self.on_timeout)
         self.timer.start()
         
 
     def on_event(self, event: Message):
         # Wait for a quorum of messages 1B from the acceptors
         with self.proposer.lock:
-            print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) phase 1A on_event with message 1B = {isinstance(event, Message1B)}", flush=True)
             if isinstance(event, Message1B):
-                print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) received a 1B message, waiting for quorum", flush=True)
                 if event.rnd == self.proposer.c_rnd and event.id_instance == self.proposer.id_instance:
-                    self.proposer.round_responses.add((event.v_rnd, event.v_val)) 
+                    self.proposer.round_responses.append((event.v_rnd, tuple(event.v_val))) 
+                    print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) received a 1B message, waiting for quorum (len set = {len(self.proposer.round_responses)}", flush=True)
                     if len(self.proposer.round_responses) >= self.proposer.quorum:
                         print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) received a quorum of 1B messages and changes state to 2A...", flush=True)
                         self.timer.cancel()
@@ -135,9 +134,9 @@ class Phase1AState(State):
         with self.proposer.lock:
             print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) timeout in phase 1A", flush=True)
             # try another time to propose its values
-            self.proposer.round_responses = set()
+            self.proposer.round_responses = list()
             self.proposer.handle_propose()
-            self.timer = threading.Timer(5, self.on_timeout)
+            self.timer = threading.Timer(1, self.on_timeout)
             self.timer.start()
 
 
@@ -164,9 +163,10 @@ class Phase2AState(State):
         # Find the first integer that appears at least `quorum` times
         for first_int, count in count_dict.items():
             if count >= self.proposer.quorum:
-                # If found, filter `r` to keep only tuples with that first integer
-                self.proposer.round_responses.intersection_update(
-                    {t for t in self.proposer.round_responses if t[0] == first_int})
+                # If found, filter `self.proposer.round_responses` to keep only tuples with that first integer
+                self.proposer.round_responses = [
+                    t for t in self.proposer.round_responses if t[0] == first_int
+                ]
                 return True
         return False
 
@@ -175,7 +175,7 @@ class Phase2AState(State):
         # wait for a quorum of messages 2B from acceptors
         with self.proposer.lock:
             if isinstance(event, Message2B) and event.id_instance == self.proposer.id_instance:
-                self.proposer.round_responses.add((event.v_rnd, event.v_val)) 
+                self.proposer.round_responses.append((event.v_rnd, tuple(event.v_val))) 
                 if self.check_quorum():
                     print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) received a quorum of 2B messages", flush=True)
                     self.timer.cancel()

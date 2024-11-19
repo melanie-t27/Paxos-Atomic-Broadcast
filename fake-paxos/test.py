@@ -14,13 +14,15 @@ if __name__ == "__main__":
 
     client = Client(1, config)
     proposer = Proposer(1, config)
-    learner = Learner(1, config)
+    learner1 = Learner(1, config)
+    learner2 = Learner(2, config)
     acceptor1 = Acceptor(1, config)
     acceptor2 = Acceptor(2, config)
     acceptor3 = Acceptor(3, config)
 
     threading.Thread(target = client.run, args=["test_input"]).start()
-    threading.Thread(target = learner.run).start()
+    threading.Thread(target = learner1.run).start()
+    threading.Thread(target = learner2.run).start()
     threading.Thread(target = proposer.run).start()
     threading.Thread(target = acceptor1.run).start()
     threading.Thread(target = acceptor2.run).start()
