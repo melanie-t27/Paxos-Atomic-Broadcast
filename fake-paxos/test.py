@@ -23,7 +23,7 @@ if __name__ == "__main__":
     acceptor3 = Acceptor(3, config)
 
     threading.Thread(target = client1.run, args=["test_input"]).start()
-    threading.Thread(target = client2.run, args=["test_input"]).start()
+    threading.Thread(target = client2.run, args=["test_input2"]).start()
     threading.Thread(target = learner1.run).start()
     threading.Thread(target = learner2.run).start()
     threading.Thread(target = proposer1.run).start()
