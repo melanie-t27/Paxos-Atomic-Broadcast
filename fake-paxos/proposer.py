@@ -86,8 +86,7 @@ class Proposer:
         print(f"Proposer {self.id} start...", flush=True)
         while True:
             msg = self.r.recv(2**16)
-            message = pickle.load(msg)
-            print(f"received message, state = {self.state} ")
+            message = pickle.loads(msg)
             if isinstance(message, LearnerMessage):
                 self.update_learners()
             else: 
