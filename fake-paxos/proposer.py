@@ -33,6 +33,8 @@ class Proposer:
             self.s.sendto(pickle.dumps(message), self.config["acceptors"])
         elif isinstance(message, DecisionMessage):
             self.s.sendto(pickle.dumps(message), self.config["learners"])
+        elif isinstance(message, NotifyClientMessage):
+            self.s.sendto(pickle.dumps(message), self.config["clients"])
 
     def handle_propose(self):
         # Increment the proposal number for each new proposal
@@ -60,7 +62,12 @@ class Proposer:
         msg: Message = DecisionMessage(self.id_instance, self.d_val)
         # Send messages to all learners
         self.send_message(msg)
-        print(f"Proposer {self.id}({self.id_instance}) sends decision message with val = {msg.v_val}", flush=True)
+        # Send message to the client so that it can stop sending its value
+        id_client: int = self.d_val[0][1]
+        msg1: Message = NotifyClientMessage(id_client)
+        # Send messages to all learners
+        self.send_message(msg1)
+        print(f"Proposer {self.id}({self.id_instance}) sends decision message with val = {msg.v_val} and message to client {id_client}", flush=True)
         
     def handle_change_of_instance(self, v_val: list[tuple[int,int]]):
         # Save the decided value
@@ -87,7 +94,7 @@ class Proposer:
         while True:
             msg = self.r.recv(2**16)
             message = pickle.loads(msg)
-            if isinstance(message, LearnerMessage):
+            if isinstance(message, LearnerArrivalMessage):
                 self.update_learners()
             else: 
                 self.state.on_event(message)
@@ -104,7 +111,6 @@ class InitialState(State):
 
     def on_event(self, event: Message):
         with self.proposer.lock:
-            print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) in on_event...")
             if isinstance(event, ClientMessage):
                 # Create a set for faster membership checks
                 existing_entries : set[tuple[int,int]] = set(self.proposer.v).union(self.proposer.d_val)

@@ -1,7 +1,7 @@
 from communication import *
 from messages import *
 import pickle
-import time
+import threading
 
 
 class Client:
@@ -12,10 +12,18 @@ class Client:
         self.values : list[int] = list()
         # Socket
         self.s = mcast_sender()
+        self.r = mcast_receiver(config["clients"])
+        # Timer
+        self.timer = threading.Timer(0.5, self.submit_values)
+        self.timer.start()
 
-    def submit_values(self, values: list[int]):
+    def submit_values(self):
+        print(f"Client {self.id} sends values to proposers..", flush=True)
         message : Message = ClientMessage(self.id, self.values)
         self.s.sendto(pickle.dumps(message), self.config["proposers"])
+        # Restart timer
+        self.timer = threading.Timer(0.5, self.submit_values)
+        self.timer.start()
         
     
     '''def run(self):
@@ -52,7 +60,13 @@ class Client:
             print(f"An unexpected error occurred: {e}")  
 
         while True:
-            print(f"Client {self.id} sends values to proposers..")
-            self.submit_values(self.values)
-            time.sleep(1)   
+            msg = self.r.recv(2**16)
+            message = pickle.loads(msg)
+            if isinstance(message, NotifyClientMessage):
+                if message.id_source == self.id:
+                    # If the client receives a NotifyClientMessage then it means that its value
+                    # have already been decided on, so it can stop sending them to the proposers
+                    print(f"Client {self.id} stops sending messages after message of notify...", flush=True)
+                    self.timer.cancel()
+
             

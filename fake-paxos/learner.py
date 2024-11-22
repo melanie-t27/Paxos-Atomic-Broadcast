@@ -24,9 +24,9 @@ class Learner:
             print(f"Learner {self.id} received decided value for {decision.id_instance} instace: {self.d_val}")
 
     def notify_proposer(self):
-        if d_val == list():
+        if self.d_val == list():
             print(f"Learner {self.id} notifies proposers...")
-            message: LearnerMessage = LearnerMessage()
+            message: LearnerArrivalMessage = LearnerArrivalMessage()
             self.s.sendto(pickle.dumps(message), self.config["proposers"])
             self.timer = threading.Timer(1, self.notify_proposer)
             self.timer.start()
