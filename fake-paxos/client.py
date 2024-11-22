@@ -14,7 +14,7 @@ class Client:
         self.s = mcast_sender()
         self.r = mcast_receiver(config["clients"])
         # Timer
-        self.timer = threading.Timer(0.5, self.submit_values)
+        self.timer = threading.Timer(1, self.submit_values)
         self.timer.start()
 
     def submit_values(self):
@@ -22,7 +22,7 @@ class Client:
         message : Message = ClientMessage(self.id, self.values)
         self.s.sendto(pickle.dumps(message), self.config["proposers"])
         # Restart timer
-        self.timer = threading.Timer(0.5, self.submit_values)
+        self.timer = threading.Timer(1, self.submit_values)
         self.timer.start()
         
     

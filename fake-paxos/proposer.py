@@ -95,6 +95,7 @@ class Proposer:
             msg = self.r.recv(2**16)
             message = pickle.loads(msg)
             if isinstance(message, LearnerArrivalMessage):
+                print(f"Proposer {self.id} received learner arrival message and sends update to learners", flush=True)
                 self.update_learners()
             else: 
                 self.state.on_event(message)
@@ -125,7 +126,7 @@ class InitialState(State):
     def on_timeout(self):
         with self.proposer.lock:
             print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) timeout in initial phase", flush=True)
-            if self.proposer.v != list():
+            if self.proposer.v:
                 self.timer.cancel()
                 self.proposer.set_state(Phase1AState(self.proposer))
             self.timer = threading.Timer(1, self.on_timeout)
@@ -219,11 +220,13 @@ class Phase3State(State):
     def __init__(self, proposer: Proposer):
         self.proposer = proposer
         self.proposer.handle_acceptance()
+        self.timer = threading.Timer(1, self.on_timeout)
+        self.timer.start()
 
     def on_event(self, event: Message):
+        pass
+    
+    def on_timeout(self):
         with self.proposer.lock:
             print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) changing state to initial after sending decision...", flush=True)
             self.proposer.set_state(InitialState(self.proposer))
-    
-    def on_timeout(self):
-        pass

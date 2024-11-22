@@ -14,28 +14,34 @@ class Learner:
         self.d_val : list[int] = list()
         self.id_instance = -1
         # Timer
-        self.timer = threading.Timer(0.5, self.notify_proposer)
+        self.timer = threading.Timer(1, self.notify_proposer)
         self.timer.start()
+        # Lock
+        self.lock = threading.RLock()
 
     def receive_decision(self, decision : DecisionMessage):
-        if decision.id_instance > self.id_instance:
-            self.d_val = [tup[0] for tup in decision.v_val]
-            self.id_instance = decision.id_instance
-            print(f"Learner {self.id} received decided value for {decision.id_instance} instace: {self.d_val}")
+        with self.lock:
+            print(f"Learner {self.id} obtained decision at {decision.id_instance} while its instance is {self.id_instance}", flush=True)
+            if decision.id_instance > self.id_instance:
+                self.d_val = [tup[0] for tup in decision.v_val]
+                self.id_instance = decision.id_instance
+                print(f"Learner {self.id} received decided value for {decision.id_instance} instace: {self.d_val}")
 
     def notify_proposer(self):
-        if self.d_val == list():
-            print(f"Learner {self.id} notifies proposers...")
-            message: LearnerArrivalMessage = LearnerArrivalMessage()
-            self.s.sendto(pickle.dumps(message), self.config["proposers"])
-            self.timer = threading.Timer(1, self.notify_proposer)
-            self.timer.start()
+        with self.lock:
+            if self.d_val == list():
+                print(f"Learner {self.id} notifies proposers...")
+                message: LearnerArrivalMessage = LearnerArrivalMessage()
+                self.s.sendto(pickle.dumps(message), self.config["proposers"])
+                self.timer = threading.Timer(1, self.notify_proposer)
+                self.timer.start()
 
     def run(self):
-        print(f"Learner {self.id} start...")
+        print(f"Learner {self.id} start...", flush=True)
         while True:
             msg : bytes = self.r.recv(2**16)
             message : Message = pickle.loads(msg)
+            print(f"Learner {self.id} received message {message}", flush=True)
             if isinstance(message, DecisionMessage):
                 self.timer.cancel()
                 self.receive_decision(message)
