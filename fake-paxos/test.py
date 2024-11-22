@@ -22,8 +22,8 @@ if __name__ == "__main__":
     acceptor2 = Acceptor(2, config)
     acceptor3 = Acceptor(3, config)
 
-    threading.Thread(target = client1.run, args=["test1_5"]).start()
-    threading.Thread(target = client2.run, args=["test2_5"]).start()
+    threading.Thread(target = client1.run, args=["input_tests/test1_5"]).start()
+    threading.Thread(target = client2.run, args=["input_tests/test2_5"]).start()
     threading.Thread(target = learner1.run).start()
     threading.Thread(target = learner2.run).start()
     threading.Thread(target = proposer1.run).start()
