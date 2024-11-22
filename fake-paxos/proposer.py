@@ -63,7 +63,7 @@ class Proposer:
         # Send messages to all learners
         self.send_message(msg)
         # Send message to the client so that it can stop sending its value
-        id_client: int = self.d_val[0][1]
+        id_client: int = self.d_val[len(self.d_val)-1][1]
         msg1: Message = NotifyClientMessage(id_client)
         # Send messages to all learners
         self.send_message(msg1)
@@ -219,10 +219,10 @@ class Phase3State(State):
     def __init__(self, proposer: Proposer):
         self.proposer = proposer
         self.proposer.handle_acceptance()
-        print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) changing state to initial after sending decision...", flush=True)
 
     def on_event(self, event: Message):
         with self.proposer.lock:
+            print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) changing state to initial after sending decision...", flush=True)
             self.proposer.set_state(InitialState(self.proposer))
     
     def on_timeout(self):
