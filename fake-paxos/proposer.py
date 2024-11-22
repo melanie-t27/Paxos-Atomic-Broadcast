@@ -206,6 +206,7 @@ class Phase2AState(State):
     def on_timeout(self):
         with self.proposer.lock:
             print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) timeout in phase 2A", flush=True)
+            self.proposer.handle_promise()
             self.timer = threading.Timer(1, self.on_timeout)
             self.timer.start()
         
