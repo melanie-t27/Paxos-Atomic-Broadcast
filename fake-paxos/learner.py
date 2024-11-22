@@ -9,12 +9,12 @@ class Learner:
         # Sockets
         self.r = mcast_receiver(config["learners"])
         # Decided value (each message is represented by its value and the client id that sent it) and related instance
-        self.d_val : list[tuple[int,int]] = list()
+        self.d_val : list[int] = list()
         self.id_instance = -1
 
     def receive_decision(self, decision : DecisionMessage):
         if decision.id_instance > self.id_instance:
-            self.d_val = decision.v_val
+            self.d_val = [tup[0] for tup in decision.v_val]
             self.id_instance = decision.id_instance
             print(f"Learner {self.id} received decided value for {decision.id_instance} instace: {self.d_val}")
 
