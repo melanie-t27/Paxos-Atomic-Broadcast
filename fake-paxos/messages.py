@@ -42,3 +42,7 @@ class ClientMessage(Message):
         super().__init__(-1)
         self.id_source = id_source
         self.values = value
+
+class LearnerMessage(Message):
+    def __init__(self):
+        super().__init__(-1)

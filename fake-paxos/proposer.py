@@ -13,15 +13,11 @@ class Proposer:
         self.quorum : int = math.ceil(NUM_ACCEPTORS / 2) 
         self.round_responses: list[tuple[int, tuple[tuple[int,int],...]]] = list()
         self.id_instance = 0
-        # Timer used to updated learners joined the system later or if the decision messages were lost
-        self.timer = threading.Timer(1, self.update_learners)
-        self.timer.start()
         # Sockets
         self.r = mcast_receiver(config["proposers"])
         self.s = mcast_sender()
         # Obtained value from client
-        self.v : list[tuple[int,int]] = list() # TODO change this to list[tuple[int,int]] to handle duplicate messages between clients
-        # Proposal round number (unique and increasing within proposers of the same paxos instance)
+        self.v : list[tuple[int,int]] = list()
         self.c_rnd : int = id
         # Proposal value for this proposer picked at round proposal_round
         self.c_val : list[tuple[int,int]] = list()
@@ -81,9 +77,7 @@ class Proposer:
         # Send messages to all learners
         msg: Message = DecisionMessage(self.id_instance - 1, self.d_val)
         self.send_message(msg)
-        # Restart timer
-        self.timer = threading.Timer(1, self.update_learners)
-        self.timer.start()
+
                 
     def set_state(self, state : State):
         self.state = state
@@ -92,8 +86,12 @@ class Proposer:
         print(f"Proposer {self.id} start...", flush=True)
         while True:
             msg = self.r.recv(2**16)
+            message = pickle.load(msg)
             print(f"received message, state = {self.state} ")
-            self.state.on_event(pickle.loads(msg))
+            if isinstance(message, LearnerMessage):
+                self.update_learners()
+            else: 
+                self.state.on_event(message)
 
 
 ########################## STATES FOR FINITE STATE MACHINE ##########################
