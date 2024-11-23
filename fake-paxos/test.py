@@ -16,7 +16,7 @@ if __name__ == "__main__":
     #threading.Thread(target = proposer2.run).start()
     
     client1 = Client(1, config)
-    threading.Thread(target = client1.run_file, args=["input_tests/test1_1000"]).start()
+    threading.Thread(target = client1.run_file, args=["input_tests/test1_10000"]).start()
 
     client2 = Client(2, config)
     threading.Thread(target = client2.run_file, args=["input_tests/test2_10000"]).start()
