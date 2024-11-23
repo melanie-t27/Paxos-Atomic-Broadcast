@@ -62,6 +62,7 @@ class Proposer:
         self.handle_change_of_instance(list(self.round_responses[0][1]))
         id_client: int = self.d_val[len(self.d_val)-1][1]
         val : list[int] = [tup[0] for tup in self.d_val]
+        
         # Prepare message with the right values
         msg: Message = DecisionMessage(self.id_instance, val)
         print(f"Proposer {self.id}({self.id_instance}) sends decision message (size {sys.getsizeof(pickle.dumps(msg))}) to learners and message to client {id_client}", flush=True)
