@@ -55,7 +55,7 @@ class Proposer:
         self.round_responses = list()
         msg: Message = Message2A(self.id_instance, self.c_rnd, self.c_val)
         self.send_message(msg)
-        print(f"Proposer {self.id}({self.id_instance}) sends 2A: c_rnd = {self.c_rnd}, c_val = {self.c_val}", flush=True)
+        print(f"Proposer {self.id}({self.id_instance}) sends 2A: c_rnd = {self.c_rnd}", flush=True)
                 
     def handle_acceptance(self):
         self.handle_change_of_instance(list(self.round_responses[0][1]))
@@ -68,7 +68,7 @@ class Proposer:
         msg1: Message = NotifyClientMessage(id_client)
         # Send messages to all learners
         self.send_message(msg1)
-        print(f"Proposer {self.id}({self.id_instance}) sends decision message with val = {msg.v_val} and message to client {id_client}", flush=True)
+        print(f"Proposer {self.id}({self.id_instance}) sends decision message to learners and message to client {id_client}", flush=True)
         
     def handle_change_of_instance(self, v_val: list[tuple[int,int]]):
         # Save the decided value
@@ -121,7 +121,7 @@ class InitialState(State):
                                     if (value, event.id_source) not in existing_entries) 
                 if self.proposer.v != list():
                     self.timer.cancel()
-                    print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) received client {event.id_source} messages and start phase 1A with v = {self.proposer.v}", flush=True)
+                    print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) received client {event.id_source} messages and start phase 1A", flush=True)
                     self.proposer.set_state(Phase1AState(self.proposer))
         
     def on_timeout(self):
@@ -150,7 +150,7 @@ class Phase1AState(State):
             if isinstance(event, Message1B):
                 if event.rnd == self.proposer.c_rnd and event.id_instance == self.proposer.id_instance:
                     self.proposer.round_responses.append((event.v_rnd, tuple(event.v_val))) 
-                    print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) received a 1B message, waiting for quorum (len set = {len(self.proposer.round_responses)}", flush=True)
+                    print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) received a 1B message, waiting for quorum (len set = {len(self.proposer.round_responses)})", flush=True)
                     if len(self.proposer.round_responses) >= self.proposer.quorum:
                         print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) received a quorum of 1B messages and changes state to 2A...", flush=True)
                         self.timer.cancel()

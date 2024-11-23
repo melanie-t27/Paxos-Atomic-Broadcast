@@ -25,7 +25,7 @@ class Learner:
             if decision.id_instance > self.id_instance:
                 self.d_val = [tup[0] for tup in decision.v_val]
                 self.id_instance = decision.id_instance
-                print(f"Learner {self.id} received decided value for {decision.id_instance} instace: {self.d_val}")
+                print(f"Learner {self.id} received decided value for {decision.id_instance} instace...")
 
     def notify_proposer(self):
         with self.lock:

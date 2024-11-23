@@ -33,17 +33,17 @@ class Acceptor:
             msg : Message1B = Message1B(message.id_instance, self.round[message.id_instance],
                                        self.v_rnd[message.id_instance], self.v_val[message.id_instance])
             self.send_message(msg)
-            print(f"Acceptor {self.id}({message.id_instance}) send message 1B with rnd = {self.round[message.id_instance]}, v-rnd = {self.v_rnd[message.id_instance]}, v-val = {self.v_val[message.id_instance]}", flush=True)
+            print(f"Acceptor {self.id}({message.id_instance}) send message 1B with rnd = {self.round[message.id_instance]}, v-rnd = {self.v_rnd[message.id_instance]}, v-val = ...", flush=True)
     
     def handle_propose(self, message : Message2A):
-        print(f"Acceptor {self.id}({message.id_instance}) received message 2A with c-rnd = {message.c_rnd}, c-val = {message.c_val}", flush=True)
+        print(f"Acceptor {self.id}({message.id_instance}) received message 2A with c-rnd = {message.c_rnd}, c-val = ...", flush=True)
         if message.c_rnd >= self.round[message.id_instance]:
             self.v_rnd[message.id_instance] = message.c_rnd
             self.v_val[message.id_instance] = message.c_val
             msg : Message2B = Message2B(message.id_instance, self.v_rnd[message.id_instance], 
                                         self.v_val[message.id_instance])
             self.send_message(msg)
-            print(f"Acceptor {self.id}({message.id_instance}) received message 2B with v-rnd = {self.v_rnd[message.id_instance]}, v-val = {self.v_val[message.id_instance]}", flush=True)
+            print(f"Acceptor {self.id}({message.id_instance}) received message 2B with v-rnd = {self.v_rnd[message.id_instance]}, v-val = ...", flush=True)
 
     def set_state(self, state : State):
         self.state = state
