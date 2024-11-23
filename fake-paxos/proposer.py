@@ -3,6 +3,7 @@ import math
 import threading
 import pickle
 
+# We are assuming that there will be 3 acceptors
 NUM_ACCEPTORS = 3
 
 ########################## PROPOSER IMPLEMENTED AS A FINITE STATE MACHINE ##########################

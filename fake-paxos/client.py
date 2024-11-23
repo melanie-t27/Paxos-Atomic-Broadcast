@@ -26,7 +26,7 @@ class Client:
         self.timer.start()
         
     
-    '''def run(self):
+    def run(self):
         while True:
             value : str = input().strip()
             if not value:
@@ -37,11 +37,17 @@ class Client:
                 print("Please submit an integer value.")
 
         while True:
-            self.submit_values(self.values)
-            time.sleep(1)
-    '''
+            msg = self.r.recv(2**16)
+            message = pickle.loads(msg)
+            if isinstance(message, NotifyClientMessage):
+                if message.id_source == self.id:
+                    # If the client receives a NotifyClientMessage then it means that its value
+                    # have already been decided on, so it can stop sending them to the proposers
+                    print(f"Client {self.id} stops sending messages after message of notify...", flush=True)
+                    self.timer.cancel()
 
-    def run(self, filename: str):
+
+    def run_file(self, filename: str):
         print(f"Client {self.id} start...")
         try:
             with open(filename, 'r') as file:

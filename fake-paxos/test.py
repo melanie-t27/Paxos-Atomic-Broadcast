@@ -16,13 +16,13 @@ if __name__ == "__main__":
     #threading.Thread(target = proposer2.run).start()
     
     client1 = Client(1, config)
-    threading.Thread(target = client1.run, args=["input_tests/test1_5"]).start()
+    threading.Thread(target = client1.run_file, args=["input_tests/test1_1000"]).start()
 
     client2 = Client(2, config)
-    threading.Thread(target = client2.run, args=["input_tests/test2_5"]).start()
+    threading.Thread(target = client2.run_file, args=["input_tests/test2_1000"]).start()
 
     learner1 = Learner(1, config)
-    threading.Thread(target = learner1.run).start()
+    threading.Thread(target = learner1.run_file, args=["output1.txt"]).start()
 
     proposer1 = Proposer(1, config)
     threading.Thread(target = proposer1.run).start()
@@ -36,11 +36,14 @@ if __name__ == "__main__":
 
     acceptor3 = Acceptor(3, config)
     threading.Thread(target = acceptor3.run).start()
-    time.sleep(10)
-    learner2 = Learner(2, config)
-    threading.Thread(target = learner2.run).start()
-    time.sleep(10)
-    client3 = Client(3, config)
-    threading.Thread(target = client3.run, args=["input_tests/test1_5"]).start()
 
     time.sleep(10)
+
+    learner2 = Learner(2, config)
+    threading.Thread(target = learner2.run_file, args=["output2.txt"]).start()
+
+    """ time.sleep(10)
+    client3 = Client(3, config)
+    threading.Thread(target = client3.run, args=["input_tests/test1_5"]).start() """
+
+    time.sleep(60)

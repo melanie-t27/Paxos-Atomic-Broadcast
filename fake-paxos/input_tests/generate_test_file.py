@@ -3,35 +3,37 @@ import argparse
 
 def generate_integers_to_file(file_name: str, num_integers: int, lower_bound: int, upper_bound: int) -> None:
     # Generates a file with random integers within a specified range, ensuring no duplicates.
-    # Use a set to store unique integers
-    unique_integers: set[int] = set()
+    # Ensure the range can accommodate the requested number of integers
+    if upper_bound - lower_bound + 1 < num_integers:
+        raise ValueError("Range is too small to generate the requested number of unique integers.")
+    
+    # Generate the full range, shuffle, and take the first `num_integers`
+    all_integers = list(range(lower_bound, upper_bound + 1))
+    random.shuffle(all_integers)
+    selected_integers = all_integers[:num_integers]
 
-    # Keep generating integers until we have enough unique ones
-    while len(unique_integers) < num_integers:
-        random_integer = random.randint(lower_bound, upper_bound)
-        unique_integers.add(random_integer)  # Add to set (duplicates are ignored automatically)
-
-    # Convert the set to a list and shuffle it for random order
-    shuffled_integers = list(unique_integers)
-    random.shuffle(shuffled_integers)
-
-    # Write the unique integers to the file
+    # Write the selected integers to the file
     with open(file_name, 'w') as file:
-        for integer in shuffled_integers:
+        for integer in selected_integers:
             file.write(f"{integer}\n")
     
-    print(f"{len(unique_integers)} unique integers have been written to {file_name}.")
+    print(f"{num_integers} unique integers have been written to {file_name}.")
+
 
 def main():
     # Set up the argument parser
     parser = argparse.ArgumentParser(description="Generate a file with random integers.")
     parser.add_argument("file_name", type=str, help="Name of the output file.")
     parser.add_argument("num_integers", type=int, help="Number of integers to generate.")
-    parser.add_argument("lower_bound", type=int, help="Lower bound for the integers.")
-    parser.add_argument("upper_bound", type=int, help="Upper bound for the integers.")
+    parser.add_argument("--lower_bound", type=int, default=1, help="Lower bound for the integers.")
+    parser.add_argument("--upper_bound", type=int, default=None, help="Upper bound for the integers.")
     
     # Parse the arguments
     args = parser.parse_args()
+
+    # If upper_bound is not specified than set it to the exact number of integer
+    if args.upper_bound == None:
+        args.upper_bound = args.num_integers + args.lower_bound
 
     # Call the function with arguments
     generate_integers_to_file(args.file_name, args.num_integers, args.lower_bound, args.upper_bound)

@@ -45,3 +45,18 @@ class Learner:
             if isinstance(message, DecisionMessage):
                 self.timer.cancel()
                 self.receive_decision(message)
+
+    def run_file(self, filename: str):
+        print(f"Learner {self.id} start...", flush=True)
+        while True:
+            msg : bytes = self.r.recv(2**16)
+            message : Message = pickle.loads(msg)
+            print(f"Learner {self.id} received message {message}", flush=True)
+            if isinstance(message, DecisionMessage):
+                self.timer.cancel()
+                self.receive_decision(message)
+                # Clear the file by opening in write mode
+                with open(filename, "w") as file:
+                    for val in self.d_val:
+                        file.write(f"{val}")
+
