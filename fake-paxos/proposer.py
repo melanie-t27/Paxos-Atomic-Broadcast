@@ -2,6 +2,7 @@ from utils import *
 import math
 import threading
 import pickle
+import sys
 
 # We are assuming that there will be 3 acceptors
 NUM_ACCEPTORS = 3
@@ -42,8 +43,8 @@ class Proposer:
         self.c_rnd = (self.c_rnd % 100) + (self.c_rnd // 100 + 1) * 100
         # Send prepare messages to all acceptors
         msg : Message = Message1A(self.id_instance, self.c_rnd)
+        print(f"Proposer {self.id}({self.id_instance}) send proposal (size {sys.getsizeof(pickle.dumps(msg))}) with c-rnd = {self.c_rnd}", flush=True)
         self.send_message(msg)
-        print(f"Proposer {self.id}({self.id_instance}) send proposal with c-rnd = {self.c_rnd}", flush=True)
 
     def handle_promise(self):
         k = max(t[0] for t in self.round_responses) 
@@ -54,21 +55,23 @@ class Proposer:
             self.c_val = list(list(v)[0][1]) # Get the second element of the tuple, they are all equal
         self.round_responses = list()
         msg: Message = Message2A(self.id_instance, self.c_rnd, self.c_val)
+        print(f"Proposer {self.id}({self.id_instance}) sends 2A (size {sys.getsizeof(pickle.dumps(msg))}): c_rnd = {self.c_rnd}", flush=True)
         self.send_message(msg)
-        print(f"Proposer {self.id}({self.id_instance}) sends 2A: c_rnd = {self.c_rnd}", flush=True)
-                
+
     def handle_acceptance(self):
         self.handle_change_of_instance(list(self.round_responses[0][1]))
+        id_client: int = self.d_val[len(self.d_val)-1][1]
+        val : list[int] = [tup[0] for tup in self.d_val]
         # Prepare message with the right values
-        msg: Message = DecisionMessage(self.id_instance, self.d_val)
+        msg: Message = DecisionMessage(self.id_instance, val)
+        print(f"Proposer {self.id}({self.id_instance}) sends decision message (size {sys.getsizeof(pickle.dumps(msg))}) to learners and message to client {id_client}", flush=True)
         # Send messages to all learners
         self.send_message(msg)
         # Send message to the client so that it can stop sending its value
-        id_client: int = self.d_val[len(self.d_val)-1][1]
         msg1: Message = NotifyClientMessage(id_client)
         # Send messages to all learners
         self.send_message(msg1)
-        print(f"Proposer {self.id}({self.id_instance}) sends decision message to learners and message to client {id_client}", flush=True)
+        
         
     def handle_change_of_instance(self, v_val: list[tuple[int,int]]):
         # Save the decided value
@@ -83,8 +86,10 @@ class Proposer:
 
     def update_learners(self):
         # Send messages to all learners
-        msg: Message = DecisionMessage(self.id_instance - 1, self.d_val)
-        self.send_message(msg)
+        with self.lock:
+            val : list[int] = [tup[0] for tup in self.d_val]
+            msg: Message = DecisionMessage(self.id_instance - 1, val)
+            self.send_message(msg)
 
                 
     def set_state(self, state : State):

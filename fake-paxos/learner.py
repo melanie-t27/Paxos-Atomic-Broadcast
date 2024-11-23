@@ -23,7 +23,7 @@ class Learner:
         with self.lock:
             print(f"Learner {self.id} obtained decision at {decision.id_instance} while its instance is {self.id_instance}", flush=True)
             if decision.id_instance > self.id_instance:
-                self.d_val = [tup[0] for tup in decision.v_val]
+                self.d_val = decision.v_val
                 self.id_instance = decision.id_instance
                 print(f"Learner {self.id} received decided value for {decision.id_instance} instace...")
 

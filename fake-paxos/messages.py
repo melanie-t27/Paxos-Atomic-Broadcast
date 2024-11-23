@@ -32,7 +32,7 @@ class Message2B(Message):
 
 
 class DecisionMessage(Message):
-    def __init__(self, id_instance: int, v_val: list[tuple[int,int]]):
+    def __init__(self, id_instance: int, v_val: list[int]):
         super().__init__(id_instance)
         self.v_val = v_val
 
