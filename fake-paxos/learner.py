@@ -58,5 +58,5 @@ class Learner:
                 # Clear the file by opening in write mode
                 with open(filename, "w") as file:
                     for val in self.d_val:
-                        file.write(f"{val}")
+                        file.write(f"{val}\n")
 

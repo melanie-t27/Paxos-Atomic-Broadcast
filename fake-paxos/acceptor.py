@@ -31,8 +31,9 @@ class Acceptor:
         print(f"Acceptor {self.id}({message.id_instance}) received message 1A with c-rnd = {message.c_rnd}", flush=True)
         if message.c_rnd > self.round[message.id_instance]:
             self.round[message.id_instance] = message.c_rnd
+            val, id = to_list_and_id(self.v_val[message.id_instance])
             msg : Message1B = Message1B(message.id_instance, self.round[message.id_instance],
-                                       self.v_rnd[message.id_instance], self.v_val[message.id_instance])
+                                       self.v_rnd[message.id_instance], val, id)
             print(f"Acceptor {self.id}({message.id_instance}) send message 1B (size = {sys.getsizeof(pickle.dumps(msg))}) with rnd = {self.round[message.id_instance]}, v-rnd = {self.v_rnd[message.id_instance]}, v-val = ...", flush=True)
             self.send_message(msg)
             
@@ -41,9 +42,9 @@ class Acceptor:
         print(f"Acceptor {self.id}({message.id_instance}) received message 2A with c-rnd = {message.c_rnd}, c-val = ...", flush=True)
         if message.c_rnd >= self.round[message.id_instance]:
             self.v_rnd[message.id_instance] = message.c_rnd
-            self.v_val[message.id_instance] = message.c_val
-            msg : Message2B = Message2B(message.id_instance, self.v_rnd[message.id_instance], 
-                                        self.v_val[message.id_instance])
+            self.v_val[message.id_instance] = from_list_and_id((message.c_val, message.id_source))
+            val, id = to_list_and_id(self.v_val[message.id_instance])
+            msg : Message2B = Message2B(message.id_instance, self.v_rnd[message.id_instance], val, id)
             print(f"Acceptor {self.id}({message.id_instance}) sends message 2B (size = {sys.getsizeof(pickle.dumps(msg))}) with v-rnd = {self.v_rnd[message.id_instance]}, v-val = ...", flush=True)
             self.send_message(msg)
             

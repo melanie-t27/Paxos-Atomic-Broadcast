@@ -7,6 +7,9 @@ import sys
 # We are assuming that there will be 3 acceptors
 NUM_ACCEPTORS = 3
 
+
+
+
 ########################## PROPOSER IMPLEMENTED AS A FINITE STATE MACHINE ##########################
 class Proposer:
     def __init__(self, id: int, config: dict[str, tuple[str, int]]):
@@ -54,15 +57,15 @@ class Proposer:
         else:
             self.c_val = list(list(v)[0][1]) # Get the second element of the tuple, they are all equal
         self.round_responses = list()
-        msg: Message = Message2A(self.id_instance, self.c_rnd, self.c_val)
+        val, id = to_list_and_id(self.c_val)
+        msg: Message = Message2A(self.id_instance, self.c_rnd, val, id)
         print(f"Proposer {self.id}({self.id_instance}) sends 2A (size {sys.getsizeof(pickle.dumps(msg))}): c_rnd = {self.c_rnd}", flush=True)
         self.send_message(msg)
 
     def handle_acceptance(self):
         self.handle_change_of_instance(list(self.round_responses[0][1]))
-        id_client: int = self.d_val[len(self.d_val)-1][1]
-        val : list[int] = [tup[0] for tup in self.d_val]
-        
+        id_client : int = self.d_val[len(self.d_val)-1][1]
+        val, _ = to_list_and_id(self.d_val)
         # Prepare message with the right values
         msg: Message = DecisionMessage(self.id_instance, val)
         print(f"Proposer {self.id}({self.id_instance}) sends decision message (size {sys.getsizeof(pickle.dumps(msg))}) to learners and message to client {id_client}", flush=True)
@@ -72,7 +75,6 @@ class Proposer:
         msg1: Message = NotifyClientMessage(id_client)
         # Send messages to all learners
         self.send_message(msg1)
-        
         
     def handle_change_of_instance(self, v_val: list[tuple[int,int]]):
         # Save the decided value
@@ -88,11 +90,10 @@ class Proposer:
     def update_learners(self):
         # Send messages to all learners
         with self.lock:
-            val : list[int] = [tup[0] for tup in self.d_val]
+            val, _ = to_list_and_id(self.d_val)
             msg: Message = DecisionMessage(self.id_instance - 1, val)
             self.send_message(msg)
-
-                
+       
     def set_state(self, state : State):
         self.state = state
     
@@ -155,7 +156,7 @@ class Phase1AState(State):
         with self.proposer.lock:
             if isinstance(event, Message1B):
                 if event.rnd == self.proposer.c_rnd and event.id_instance == self.proposer.id_instance:
-                    self.proposer.round_responses.append((event.v_rnd, tuple(event.v_val))) 
+                    self.proposer.round_responses.append((event.v_rnd, tuple(from_list_and_id((event.v_val, event.id_source))))) 
                     print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) received a 1B message, waiting for quorum (len set = {len(self.proposer.round_responses)})", flush=True)
                     if len(self.proposer.round_responses) >= self.proposer.quorum:
                         print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) received a quorum of 1B messages and changes state to 2A...", flush=True)
@@ -207,7 +208,7 @@ class Phase2AState(State):
         # wait for a quorum of messages 2B from acceptors
         with self.proposer.lock:
             if isinstance(event, Message2B) and event.id_instance == self.proposer.id_instance:
-                self.proposer.round_responses.append((event.v_rnd, tuple(event.v_val))) 
+                self.proposer.round_responses.append((event.v_rnd, tuple(from_list_and_id((event.v_val, event.id_source))))) 
                 if self.check_quorum():
                     print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) received a quorum of 2B messages", flush=True)
                     self.timer.cancel()
