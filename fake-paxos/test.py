@@ -4,8 +4,15 @@ from acceptor import *
 from learner import *
 from client import *
 import time
+import argparse
 
 if __name__ == "__main__":
+    # Parse the command-line argument for x
+    parser = argparse.ArgumentParser(description="Run Paxos simulation.")
+    parser.add_argument("x", type=int, choices=[5, 100, 1000], help="The value of x for the input file path")
+    args = parser.parse_args()
+    x = args.x
+
     config : dict[str, tuple[str,int]] = {}
     config["clients"] = ("239.0.0.1", 5000)
     config["proposers"] = ("239.0.0.1", 6000)
@@ -16,10 +23,10 @@ if __name__ == "__main__":
     #threading.Thread(target = proposer2.run).start()
     
     client1 = Client(1, config)
-    threading.Thread(target = client1.run_file, args=["input_tests/test1_10000"]).start()
+    threading.Thread(target = client1.run_file, args=[f"input_tests/test1_{x}"]).start()
 
     client2 = Client(2, config)
-    threading.Thread(target = client2.run_file, args=["input_tests/test2_10000"]).start()
+    threading.Thread(target = client2.run_file, args=[f"input_tests/test2_{x}"]).start()
 
     learner1 = Learner(1, config)
     threading.Thread(target = learner1.run_file, args=["output1.txt"]).start()
@@ -42,8 +49,8 @@ if __name__ == "__main__":
     learner2 = Learner(2, config)
     threading.Thread(target = learner2.run_file, args=["output2.txt"]).start()
 
-    #time.sleep(10)
-    #client3 = Client(3, config)
-    #threading.Thread(target = client3.run_file, args=["input_tests/test1_5"]).start()
+    time.sleep(10)
+    client3 = Client(3, config)
+    threading.Thread(target = client3.run_file, args=[f"input_tests/test1_{x}"]).start()
 
     time.sleep(60)
