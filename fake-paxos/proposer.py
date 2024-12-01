@@ -3,6 +3,7 @@ import math
 import threading
 import pickle
 import sys
+from collections import defaultdict
 
 # We are assuming that there will be 3 acceptors
 NUM_ACCEPTORS = 3
@@ -27,7 +28,7 @@ class Proposer:
         # Proposal value for this proposer picked at round proposal_round
         self.c_val : list[tuple[int,int]] = list()
         # Decided value
-        self.d_val :list[tuple[int,int]] = list()
+        self.d_val : defaultdict[int,list[tuple[int,int]]] = defaultdict(list)
         # Lock
         self.lock = threading.RLock()
         # State machine 
@@ -64,11 +65,11 @@ class Proposer:
 
     def handle_acceptance(self):
         self.handle_change_of_instance(list(self.round_responses[0][1]))
-        id_client : int = self.d_val[len(self.d_val)-1][1]
-        val, _ = to_list_and_id(self.d_val)
+        id_client : int = self.d_val[self.id_instance - 1][len(self.d_val)-1][1]
+        val, _ = to_list_and_id(self.d_val[self.id_instance - 1])
         # Prepare message with the right values
-        msg: Message = DecisionMessage(self.id_instance, val)
-        print(f"Proposer {self.id}({self.id_instance}) sends decision message (size {sys.getsizeof(pickle.dumps(msg))}) to learners and message to client {id_client}", flush=True)
+        msg: Message = DecisionMessage(self.id_instance - 1, val)
+        print(f"Proposer {self.id}({self.id_instance}) sends decision message with: {msg.id_instance}, {msg.v_val}", flush=True)
         # Send messages to all learners
         self.send_message(msg)
         # Send message to the client so that it can stop sending its value
@@ -78,21 +79,36 @@ class Proposer:
         
     def handle_change_of_instance(self, v_val: list[tuple[int,int]]):
         # Save the decided value
-        self.d_val.extend(v_val)
+        self.d_val[self.id_instance] = v_val
         # Delete the decided values from v 
-        self.v = [value for value in self.v if value not in self.d_val] 
+        decided_values : set[tuple[int,int]] = set()
+        for key in self.d_val.keys():
+            decided_values.update(set(self.d_val[key]))
+        self.v = [value for value in self.v if value not in decided_values] 
         # Update instance id
         self.id_instance += 1
         self.c_rnd = self.id
         # Empty the messaged at the current round
         self.round_responses = list()
 
-    def update_learners(self):
+    def update_learners(self, id_instance: int):
         # Send messages to all learners
         with self.lock:
-            val, _ = to_list_and_id(self.d_val)
-            msg: Message = DecisionMessage(self.id_instance - 1, val)
+            id : int = id_instance
+            # If the learner has just joined the system and needs to be updated about the decided
+            # values by the proposer (i.e. it sends a request message with id_instance -1) 
+            # but there are still no decided value, then ignore the request message
+            if id == -1 and self.d_val[0] == list():
+                return
+            # but if the proposer has at least the first decided values, the proposer sends 
+            # the last decided values so that it will trigger the learner to ask
+            # for all the previous decided values.
+            if id == -1 and self.d_val[0] != list():
+                id = max(self.d_val.keys())
+            val, _ = to_list_and_id(self.d_val[id])
+            msg: Message = DecisionMessage(id, val)
             self.send_message(msg)
+            print(f"Proposer {self.id} sends DecisionMessage with {msg.id_instance}, {msg.v_val}", flush=True)
        
     def set_state(self, state : State):
         self.state = state
@@ -102,9 +118,9 @@ class Proposer:
         while True:
             msg = self.r.recv(2**16)
             message = pickle.loads(msg)
-            if isinstance(message, LearnerArrivalMessage):
-                print(f"Proposer {self.id} received learner arrival message and sends update to learners", flush=True)
-                self.update_learners()
+            if isinstance(message, LearnerMessage):
+                print(f"Proposer {self.id} received learner message with {message.id_instance}", flush=True)
+                self.update_learners(message.id_instance)
             else: 
                 self.state.on_event(message)
 
@@ -122,7 +138,10 @@ class InitialState(State):
         with self.proposer.lock:
             if isinstance(event, ClientMessage):
                 # Create a set for faster membership checks
-                existing_entries : set[tuple[int,int]] = set(self.proposer.v).union(self.proposer.d_val)
+                decided_values : set[tuple[int,int]] = set()
+                for key in self.proposer.d_val.keys():
+                    decided_values.update(set(self.proposer.d_val[key]))
+                existing_entries : set[tuple[int,int]] = set(self.proposer.v).union(decided_values)
                 # Check if the new value are not already in the values to be proposed or in the values already decided
                 self.proposer.v.extend((value,event.id_source) for value in event.values 
                                     if (value, event.id_source) not in existing_entries) 

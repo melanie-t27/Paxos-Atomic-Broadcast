@@ -46,9 +46,9 @@ class ClientMessage(Message):
         self.id_source = id_source
         self.values = value
 
-class LearnerArrivalMessage(Message):
-    def __init__(self):
-        super().__init__(-1)
+class LearnerMessage(Message):
+    def __init__(self, id_instance: int):
+        super().__init__(id_instance)
 
 class NotifyClientMessage(Message):
     def __init__(self, id_source: int):

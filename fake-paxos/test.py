@@ -45,12 +45,11 @@ if __name__ == "__main__":
     threading.Thread(target = acceptor3.run).start()
 
     time.sleep(10)
-
-    learner2 = Learner(2, config)
-    threading.Thread(target = learner2.run_file, args=["output2.txt"]).start()
-
-    time.sleep(10)
     client3 = Client(3, config)
     threading.Thread(target = client3.run_file, args=[f"input_tests/test1_{x}"]).start()
+
+    time.sleep(10)
+    learner2 = Learner(2, config)
+    threading.Thread(target = learner2.run_file, args=["output2.txt"]).start()
 
     time.sleep(60)
