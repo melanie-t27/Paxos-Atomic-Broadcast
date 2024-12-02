@@ -69,6 +69,26 @@ class Learner:
             else:
                 break
 
+    def write(self, id : int):
+        current_id : int = id
+        # If it is the first time the learner is printing, then open the file in write mode
+        if current_id == 0 and self.d_val[0] != list() and self.last_printed == -1:
+            with self.lock:
+                for val in self.d_val[current_id]:
+                    print(f"{val}\n")
+                self.last_printed = current_id
+        # If it is not the first time the learner is printing, then append to the file,
+        # also checks if there are still pending values to print
+        while self.last_printed + 1 == current_id:
+            if self.d_val[current_id] != list():
+                with self.lock:
+                    for val in self.d_val[current_id]:
+                        print(f"{val}\n")
+                    self.last_printed = current_id
+                    current_id += 1
+            else:
+                break
+
 
     def run(self):
         print(f"Learner {self.id} start...", flush=True)
@@ -78,6 +98,7 @@ class Learner:
             if isinstance(message, DecisionMessage):
                 self.timer.cancel()
                 self.receive_decision(message)
+                self.write(message.id_instance)
 
     def run_file(self, filename: str):
         print(f"Learner {self.id} start...", flush=True)
