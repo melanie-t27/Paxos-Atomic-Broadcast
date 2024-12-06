@@ -34,7 +34,7 @@ class Learner:
                 all_keys_set: set[int] = set(range(0, keys[-1] + 1))
                 # Find the missing keys by computing the difference
                 self.missing_id_instance = list(all_keys_set - keys_set)
-                print(f"Learner {self.id} received decided value {decision.v_val} at {decision.id_instance}, missing {self.missing_id_instance}", flush= True)
+                print(f"Learner {self.id} received decided value at {decision.id_instance}, missing {self.missing_id_instance}", flush= True)
                 if len(self.missing_id_instance) > 0:  # if there are missing values, restart the timer so that the learner can ask for the missing values to the proposers
                     self.notify_proposer()
 

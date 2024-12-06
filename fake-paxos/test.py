@@ -9,7 +9,7 @@ import argparse
 if __name__ == "__main__":
     # Parse the command-line argument for x
     parser = argparse.ArgumentParser(description="Run Paxos simulation.")
-    parser.add_argument("x", type=int, choices=[5, 100, 1000], help="The value of x for the input file path")
+    parser.add_argument("x", type=int, choices=[5, 100, 1000, 10000], help="The value of x for the input file path")
     args = parser.parse_args()
     x = args.x
 
@@ -34,6 +34,8 @@ if __name__ == "__main__":
     proposer1 = Proposer(1, config)
     threading.Thread(target = proposer1.run).start()
     
+    proposer2 = Proposer(2, config)
+    threading.Thread(target = proposer2.run).start()
 
     acceptor1 = Acceptor(1, config)
     threading.Thread(target = acceptor1.run).start()
@@ -44,12 +46,14 @@ if __name__ == "__main__":
     acceptor3 = Acceptor(3, config)
     threading.Thread(target = acceptor3.run).start()
 
+    
+
     time.sleep(10)
     client3 = Client(3, config)
     threading.Thread(target = client3.run_file, args=[f"input_tests/test1_{x}"]).start()
 
-    time.sleep(10)
-    learner2 = Learner(2, config)
-    threading.Thread(target = learner2.run_file, args=["output2.txt"]).start()
+    # time.sleep(10)
+    # learner2 = Learner(2, config)
+    # threading.Thread(target = learner2.run_file, args=["output2.txt"]).start()
 
     time.sleep(60)
