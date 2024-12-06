@@ -18,7 +18,7 @@ class Acceptor:
         # Lock
         self.lock = threading.RLock()
         # Acceptor state
-        self.state : State = Phase1BState(self)
+        self.state : State = AcceptorState(self)
         # Sockets
         self.r = mcast_receiver(config["acceptors"])
         self.s = mcast_sender()
@@ -59,45 +59,15 @@ class Acceptor:
 
 ########################## STATES FOR FINITE STATE MACHINE ##########################
 
-class Phase1BState(State):
+class AcceptorState(State):
     def __init__(self, acceptor: Acceptor):
         self.acceptor = acceptor
-        # Set timer for 1A message arrival
-        self.timer = threading.Timer(1, self.on_timeout)
-        self.timer.start()
 
     def on_event(self, event : Message):
         with self.acceptor.lock:
             if isinstance(event, Message1A):
                 # Send messages 1B to proposers
                 self.acceptor.handle_prepare(event)
-                self.timer.cancel()
-                # Change state
-                self.acceptor.set_state(Phase2BState(self.acceptor))
-
-    def on_timeout(self):
-        # Restar timer
-        self.timer = threading.Timer(1, self.on_timeout)
-        self.timer.start()
-    
-
-class Phase2BState(State):
-    def __init__(self, acceptor: Acceptor):
-        self.acceptor = acceptor
-        # Set timer for 2A message arrival
-        self.timer = threading.Timer(1, self.on_timeout)
-        self.timer.start()
-
-    def on_event(self, event: Message):
-        with self.acceptor.lock:
-            if isinstance(event, Message2A):
+            elif isinstance(event, Message2A):
                 # Send message 2B to proposers 
                 self.acceptor.handle_propose(event)
-                self.timer.cancel()
-                # Change state
-                self.acceptor.set_state(Phase1BState(self.acceptor))
-
-    def on_timeout(self):
-        # Change state
-        self.acceptor.set_state(Phase1BState(self.acceptor))
-    
