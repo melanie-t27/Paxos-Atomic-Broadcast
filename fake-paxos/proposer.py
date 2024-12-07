@@ -39,8 +39,6 @@ class Proposer:
             self.s.sendto(pickle.dumps(message), self.config["acceptors"])
         elif isinstance(message, DecisionMessage):
             self.s.sendto(pickle.dumps(message), self.config["learners"])
-        elif isinstance(message, NotifyClientMessage):
-            self.s.sendto(pickle.dumps(message), self.config["clients"])
 
     def handle_propose(self):
         # Increment the proposal number for each new proposal
@@ -71,10 +69,6 @@ class Proposer:
         print(f"Proposer {self.id}({self.id_instance}) sends decision message at instance {msg.id_instance}", flush=True)
         # Send messages to all learners
         self.send_message(msg)
-        # Send message to the client so that it can stop sending its value
-        #msg1: Message = NotifyClientMessage(id_client)
-        # Send messages to all learners
-        #self.send_message(msg1)
         
     def handle_change_of_instance(self, v_val: list[tuple[int,int]]):
         # Save the decided value
@@ -94,25 +88,14 @@ class Proposer:
     def update_learners(self, id_instance: int):
         # Send messages to all learners
         with self.lock:
-            id : int = id_instance
-            # If the learner has just joined the system and needs to be updated about the decided
-            # values by the proposer (i.e. it sends a request message with id_instance -1) 
-            # but there are still no decided value, then ignore the request message
-            if id == -1 and self.d_val[0] == list():
-                return
-            # but if the proposer has at least the first decided values, the proposer sends 
-            # the last decided values so that it will trigger the learner to ask
-            # for all the previous decided values.
-            if id == -1 and self.d_val[0] != list():
-                id = max(self.d_val.keys())
-            # If the requested instance doesn't have decided values yet, do nothing
-            if id != -1 and self.d_val[id] == list():
-                return
-            val, _ = to_list_and_id(self.d_val[id])
-            msg: Message = DecisionMessage(id, val)
-            self.send_message(msg)
-            print(f"Proposer {self.id} sends DecisionMessage with {msg.id_instance}", flush=True)
-       
+            if self.d_val[id_instance] != list():
+                val, _ = to_list_and_id(self.d_val[id_instance])
+                msg: Message = DecisionMessage(id_instance, val)
+                self.send_message(msg)
+                print(f"Proposer {self.id} sends DecisionMessage with {msg.id_instance}", flush=True)
+            else:
+                print(f"Proposer {self.id} received update for {id_instance}, but instance not decided yet", flush=True)       
+
     def set_state(self, state : State):
         with self.lock:
             self.state = state

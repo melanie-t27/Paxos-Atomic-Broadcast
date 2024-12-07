@@ -49,8 +49,3 @@ class ClientMessage(Message):
 class LearnerMessage(Message):
     def __init__(self, id_instance: int):
         super().__init__(id_instance)
-
-class NotifyClientMessage(Message):
-    def __init__(self, id_source: int):
-        super().__init__(-1)
-        self.id_source = id_source

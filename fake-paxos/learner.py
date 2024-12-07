@@ -14,7 +14,7 @@ class Learner:
         # Decided value (each message is represented by its value and the client id that sent it) and related instance
         self.d_val : defaultdict[int,list[int]] = defaultdict(list)
         # Missing id_instance
-        self.missing_id_instance = [-1]
+        self.missing_id_instance : int = 0
         # Last printed id_instance
         self.last_printed : int = -1
         # Timer
@@ -26,24 +26,20 @@ class Learner:
     def receive_decision(self, decision : DecisionMessage):
         with self.lock:
             if self.d_val[decision.id_instance] == list():
+                self.timer.cancel()
                 # Update decided value
                 self.d_val[decision.id_instance] = decision.v_val
-                # Update missing instance ids
-                keys: list[int] = sorted(self.d_val.keys())
-                keys_set: set[int] = set(keys)
-                all_keys_set: set[int] = set(range(0, keys[-1] + 1))
-                # Find the missing keys by computing the difference
-                self.missing_id_instance = list(all_keys_set - keys_set)
-                print(f"Learner {self.id} received decided value at {decision.id_instance}, missing {self.missing_id_instance}", flush= True)
-                if len(self.missing_id_instance) > 0:  # if there are missing values, restart the timer so that the learner can ask for the missing values to the proposers
-                    self.notify_proposer()
+                # Update missing instance id
+                while self.d_val[self.missing_id_instance] != list():
+                    self.missing_id_instance += 1
+                print(f"Learner {self.id} received decided value at {decision.id_instance}, send missing {self.missing_id_instance}", flush= True)
+                self.notify_proposer()
 
     def notify_proposer(self):
         with self.lock:
-            for val in self.missing_id_instance:
-                print(f"Learner {self.id} request proposers for {val}...", flush = True)
-                message: LearnerMessage = LearnerMessage(val)
-                self.s.sendto(pickle.dumps(message), self.config["proposers"])
+            print(f"Learner {self.id} request proposers for {self.missing_id_instance}, since received {[key for key,l in self.d_val.items() if l != list()]}", flush = True)
+            message: LearnerMessage = LearnerMessage(self.missing_id_instance)
+            self.s.sendto(pickle.dumps(message), self.config["proposers"])
             self.timer = threading.Timer(1, self.notify_proposer)
             self.timer.start()
 
@@ -96,7 +92,6 @@ class Learner:
             msg : bytes = self.r.recv(2**16)
             message : Message = pickle.loads(msg)
             if isinstance(message, DecisionMessage):
-                self.timer.cancel()
                 self.receive_decision(message)
                 self.write(message.id_instance)
 
@@ -106,7 +101,6 @@ class Learner:
             msg : bytes = self.r.recv(2**16)
             message : Message = pickle.loads(msg)
             if isinstance(message, DecisionMessage):
-                self.timer.cancel()
                 self.receive_decision(message)
                 self.write_to_file(filename, message.id_instance)
             
