@@ -19,12 +19,12 @@ if __name__ == "__main__":
     config["acceptors"] = ("239.0.0.1", 7000)
     config["learners"] = ("239.0.0.1", 8000)
     
-    
+
     client1 = Client(1, config)
-    threading.Thread(target = client1.run_file, args=[f"input_tests/test1_{x}"]).start()
+    threading.Thread(target = client1.run_file, args=[f"input_tests/input1_{x}"]).start()
 
     client2 = Client(2, config)
-    threading.Thread(target = client2.run_file, args=[f"input_tests/test2_{x}"]).start()
+    threading.Thread(target = client2.run_file, args=[f"input_tests/input2_{x}"]).start()
 
     learner1 = Learner(1, config)
     threading.Thread(target = learner1.run_file, args=["output1.txt"]).start()
@@ -47,7 +47,7 @@ if __name__ == "__main__":
     
     time.sleep(10)
     client3 = Client(3, config)
-    threading.Thread(target = client3.run_file, args=[f"input_tests/test1_{x}"]).start()
+    threading.Thread(target = client3.run_file, args=[f"input_tests/input3_{x}"]).start()
 
     time.sleep(10)
     learner2 = Learner(2, config)
