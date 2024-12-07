@@ -47,7 +47,7 @@ class Proposer:
         self.c_rnd = (self.c_rnd % 100) + (self.c_rnd // 100 + 1) * 100
         # Send prepare messages to all acceptors
         msg : Message = Message1A(self.id_instance, self.c_rnd)
-        print(f"Proposer {self.id}({self.id_instance}) send proposal with c-rnd = {self.c_rnd} [v = {self.v}]", flush=True)
+        print(f"Proposer {self.id}({self.id_instance}) send proposal with c-rnd = {self.c_rnd} and client id = {self.v[0][1]}", flush=True)
         self.send_message(msg)
 
     def handle_promise(self):
@@ -64,7 +64,7 @@ class Proposer:
 
     def handle_acceptance(self):
         self.handle_change_of_instance(list(self.round_responses_2B[0][1]))
-        id_client : int = self.d_val[self.id_instance - 1][len(self.d_val)-1][1]
+        #id_client : int = self.d_val[self.id_instance - 1][len(self.d_val)-1][1]
         val, _ = to_list_and_id(self.d_val[self.id_instance - 1])
         # Prepare message with the right values
         msg: Message = DecisionMessage(self.id_instance - 1, val)
@@ -72,9 +72,9 @@ class Proposer:
         # Send messages to all learners
         self.send_message(msg)
         # Send message to the client so that it can stop sending its value
-        msg1: Message = NotifyClientMessage(id_client)
+        #msg1: Message = NotifyClientMessage(id_client)
         # Send messages to all learners
-        self.send_message(msg1)
+        #self.send_message(msg1)
         
     def handle_change_of_instance(self, v_val: list[tuple[int,int]]):
         # Save the decided value
@@ -159,7 +159,7 @@ class InitialState(State):
             print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) timeout in initial phase", flush=True)
             if self.proposer.v != list():
                 self.timer.cancel()
-                print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) from timeout in initial phase goes to 1A because v ={self.proposer.v}", flush=True)
+                print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) from timeout in initial phase goes to 1A because v is not empty", flush=True)
                 self.proposer.set_state(Phase1AState(self.proposer))
             self.timer = threading.Timer(1, self.on_timeout)
             self.timer.start()

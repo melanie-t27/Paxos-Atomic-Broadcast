@@ -4,7 +4,7 @@ from collections import defaultdict
 import threading
 import pickle
 
-########################## ACCEPTOR IMPLEMENTED AS A FINITE STATE MACHINE ##########################
+########################## ACCEPTOR ##########################
 class Acceptor:
     def __init__(self, id: int, config: dict[str, tuple[str, int]]):
         self.id = id
@@ -17,8 +17,6 @@ class Acceptor:
         self.round : defaultdict[int,int] = defaultdict(int)
         # Lock
         self.lock = threading.RLock()
-        # Acceptor state
-        self.state : State = AcceptorState(self)
         # Sockets
         self.r = mcast_receiver(config["acceptors"])
         self.s = mcast_sender()
@@ -33,7 +31,7 @@ class Acceptor:
             val, id = to_list_and_id(self.v_val[message.id_instance])
             msg : Message1B = Message1B(message.id_instance, self.round[message.id_instance],
                                        self.v_rnd[message.id_instance], val, id)
-            print(f"Acceptor {self.id}({message.id_instance}) send message 1B with rnd = {self.round[message.id_instance]}, v-rnd = {self.v_rnd[message.id_instance]}", flush=True)
+            print(f"Acceptor {self.id}({message.id_instance}) send message 1B with rnd = {self.round[message.id_instance]}, v-rnd = {self.v_rnd[message.id_instance]}, client id = {id}", flush=True)
             self.send_message(msg)
             
     
@@ -44,30 +42,20 @@ class Acceptor:
             self.v_val[message.id_instance] = from_list_and_id((message.c_val, message.id_source))
             val, id = to_list_and_id(self.v_val[message.id_instance])
             msg : Message2B = Message2B(message.id_instance, self.v_rnd[message.id_instance], val, id)
-            print(f"Acceptor {self.id}({message.id_instance}) sends message 2B with v-rnd = {self.v_rnd[message.id_instance]}", flush=True)
+            print(f"Acceptor {self.id}({message.id_instance}) sends message 2B with v-rnd = {self.v_rnd[message.id_instance]}, client id = {id}", flush=True)
             self.send_message(msg)
-            
-
-    def set_state(self, state : State):
-        self.state = state
 
     def run(self):
         print(f"Acceptor {self.id} start...", flush=True)
         while True:
             msg : bytes = self.r.recv(2**16)
-            self.state.on_event(pickle.loads(msg))
-
-########################## STATES FOR FINITE STATE MACHINE ##########################
-
-class AcceptorState(State):
-    def __init__(self, acceptor: Acceptor):
-        self.acceptor = acceptor
-
-    def on_event(self, event : Message):
-        with self.acceptor.lock:
-            if isinstance(event, Message1A):
-                # Send messages 1B to proposers
-                self.acceptor.handle_prepare(event)
-            elif isinstance(event, Message2A):
-                # Send message 2B to proposers 
-                self.acceptor.handle_propose(event)
+            event : Message = pickle.loads(msg)
+            #self.state.on_event(pickle.loads(msg))
+            with self.lock:
+                if isinstance(event, Message1A):
+                    # Send messages 1B to proposers
+                    self.handle_prepare(event)
+                elif isinstance(event, Message2A):
+                    # Send message 2B to proposers 
+                    self.handle_propose(event)
+                    

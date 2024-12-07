@@ -65,14 +65,14 @@ class Client:
         except Exception as e:
             print(f"An unexpected error occurred: {e}")  
 
-        while True:
-            msg = self.r.recv(2**16)
-            message = pickle.loads(msg)
-            if isinstance(message, NotifyClientMessage):
-                if message.id_source == self.id:
-                    # If the client receives a NotifyClientMessage then it means that its value
-                    # have already been decided on, so it can stop sending them to the proposers
-                    print(f"Client {self.id} stops sending messages after message of notify...", flush=True)
-                    self.timer.cancel()
+        # while True:
+        #     msg = self.r.recv(2**16)
+        #     message = pickle.loads(msg)
+        #     if isinstance(message, NotifyClientMessage):
+        #         if message.id_source == self.id:
+        #             # If the client receives a NotifyClientMessage then it means that its value
+        #             # have already been decided on, so it can stop sending them to the proposers
+        #             print(f"Client {self.id} stops sending messages after message of notify...", flush=True)
+        #             self.timer.cancel()
 
             
