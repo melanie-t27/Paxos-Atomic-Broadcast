@@ -41,6 +41,8 @@ class Proposer:
             self.s.sendto(pickle.dumps(message), self.config["learners"])
 
     def handle_propose(self):
+        self.round_responses_1B = list()
+        self.round_responses_2B = list()
         # Increment the proposal number for each new proposal
         self.c_rnd = (self.c_rnd % 100) + (self.c_rnd // 100 + 1) * 100
         # Send prepare messages to all acceptors
@@ -82,8 +84,8 @@ class Proposer:
         self.id_instance += 1
         self.c_rnd = self.id
         # Empty the messages at the current round
-        self.round_responses_1B = list()
-        self.round_responses_2B = list()
+        #self.round_responses_1B = list()
+        #self.round_responses_2B = list()
 
     def update_learners(self, id_instance: int):
         # Send messages to all learners
