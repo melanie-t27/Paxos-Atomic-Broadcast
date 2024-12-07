@@ -156,7 +156,7 @@ class Phase1AState(State):
         self.proposer = proposer
         # Sends message 1A to all acceptors
         self.proposer.handle_propose()
-        print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) waiting for 1B messages...", flush=True)
+        print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) waiting for 1B messages with c-rnd = {self.proposer.c_rnd}...", flush=True)
         # Start timer for message 1B arrival
         self.timer = threading.Timer(1, self.on_timeout)
         self.timer.start()      
@@ -192,7 +192,7 @@ class Phase2AState(State):
         self.proposer = proposer
         # Send message 2A to all acceptors
         self.proposer.handle_promise()
-        print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) waiting for 2B messages...", flush=True)
+        print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) waiting for 2B messages with c-rnd = {self.proposer.c_rnd}...", flush=True)
         # Set a timer for 2B message arrival
         self.timer = threading.Timer(1, self.on_timeout)
         self.timer.start()
