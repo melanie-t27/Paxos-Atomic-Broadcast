@@ -107,11 +107,12 @@ class Proposer:
         while True:
             msg = self.r.recv(2**16)
             message = pickle.loads(msg)
-            if isinstance(message, LearnerMessage):
-                print(f"Proposer {self.id} received learner message with {message.id_instance}", flush=True)
-                self.update_learners(message.id_instance)
-            else: 
-                self.state.on_event(message)
+            with self.lock:
+                if isinstance(message, LearnerMessage):
+                    print(f"Proposer {self.id} received learner message with {message.id_instance}", flush=True)
+                    self.update_learners(message.id_instance)
+                else: 
+                    self.state.on_event(message)
 
 
 ########################## STATES FOR FINITE STATE MACHINE ##########################
