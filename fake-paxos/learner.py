@@ -52,7 +52,7 @@ class Learner:
                     for val in self.d_val[current_id]:
                         file.write(f"{val}\n")
                 self.last_printed = current_id
-                print(f"Learner {self.id} FINISHED WRITING INSTANCE {current_id}", flush=True)
+                print(f"\n\nLearner {self.id} FINISHED WRITING INSTANCE {current_id}\n\n", flush=True)
         # If it is not the first time the learner is printing, then append to the file,
         # also checks if there are still pending values to print
         while self.last_printed + 1 == current_id:
@@ -62,7 +62,7 @@ class Learner:
                         for val in self.d_val[current_id]:
                             file.write(f"{val}\n")
                     self.last_printed = current_id
-                    print(f"Learner {self.id} FINISHED WRITING INSTANCE {current_id}", flush=True)
+                    print(f"\n\nLearner {self.id} FINISHED WRITING INSTANCE {current_id}\n\n", flush=True)
                     current_id += 1
             else:
                 break
