@@ -81,16 +81,17 @@ class Proposer:
             # Save the decided value
             self.d_val[self.id_instance] = v_val
             # Delete the decided values from v 
-            decided_values : set[tuple[int,int]] = set()
-            for key in self.d_val.keys():
-                decided_values.update(set(self.d_val[key]))
-            self.v = [value for value in self.v if value not in decided_values] 
+            # decided_values : set[tuple[int,int]] = set()
+            # for key in self.d_val.keys():
+            #     decided_values.update(set(self.d_val[key]))
+            # self.v = [value for value in self.v if value not in decided_values] 
+
+            # Remove all tuples with client id equal to the one decided
+            client_id : int = v_val[0][1]
+            self.v = [t for t in self.v if t[1] != client_id]
             # Update instance id
             self.id_instance += 1
             self.c_rnd = self.id
-            # Empty the messages at the current round
-            #self.round_responses_1B = list()
-            #self.round_responses_2B = list()
 
     def update_learners(self, id_instance: int):
         # Send messages to all learners
@@ -134,15 +135,17 @@ class InitialState(State):
         with self.proposer.lock:
             if isinstance(event, ClientMessage):
                 # Create a set for faster membership checks
-                decided_values : set[tuple[int,int]] = set()
-                for key in self.proposer.d_val.keys():
-                    decided_values.update(set(self.proposer.d_val[key]))
+                decided_values: set[tuple[int, int]] = {item for sublist in self.proposer.d_val.values() for item in sublist}
+                #decided_values : set[tuple[int,int]] = set()
+                #for key in self.proposer.d_val.keys():
+                #    decided_values.update(set(self.proposer.d_val[key]))
                 existing_entries : set[tuple[int,int]] = set(self.proposer.v).union(decided_values)
                 client_ids : set[int] = {t[1] for t in existing_entries}
-                
-                # Check if the new value are not already in the values to be proposed or in the values already decided
-                self.proposer.v.extend((value,event.id_source) for value in event.values 
-                                    if (value, event.id_source) not in existing_entries)
+                if event.id_source not in client_ids:
+                    # Check if the new value are not already in the values to be proposed or in the values already decided
+                    self.proposer.v.extend((value,event.id_source) for value in event.values 
+                                    #if (value, event.id_source) not in existing_entries
+                                    )
                 print(f"Proposer {self.proposer.id}({self.proposer.id_instance}) already has clients {client_ids}, receives {event.id_source}, results in v.empty()={self.proposer.v == list()}", flush=True) 
                 if self.proposer.v != list():
                     self.timer.cancel()

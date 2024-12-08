@@ -53,4 +53,4 @@ if __name__ == "__main__":
     learner2 = Learner(2, config)
     threading.Thread(target = learner2.run_file, args=["output2.txt"]).start()
 
-    time.sleep(60)
+    time.sleep(120)
