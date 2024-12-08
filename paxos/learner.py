@@ -36,32 +36,13 @@ class Learner:
 
     def notify_proposer(self):
         with self.lock:
+            # Sends message to the proposers asking for the missing values at the given instance id
             message: LearnerMessage = LearnerMessage(self.missing_id_instance)
             self.s.sendto(pickle.dumps(message), self.config["proposers"])
+            # Start timer so it will keep on asking until it receives a response
             self.timer = threading.Timer(1, self.notify_proposer)
             self.timer.start()
 
-    def write_to_file(self, filename: str, id: int):
-        current_id : int = id
-        # If it is the first time the learner is printing, then open the file in write mode
-        if current_id == 0 and self.d_val[0] != list() and self.last_printed == -1:
-            with self.lock:
-                with open(filename, "w") as file:
-                    for val in self.d_val[current_id]:
-                        file.write(f"{val}\n")
-                self.last_printed = current_id
-        # If it is not the first time the learner is printing, then append to the file,
-        # also checks if there are still pending values to print
-        while self.last_printed + 1 == current_id:
-            if self.d_val[current_id] != list():
-                with self.lock:
-                    with open(filename, "a") as file:
-                        for val in self.d_val[current_id]:
-                            file.write(f"{val}\n")
-                    self.last_printed = current_id
-                    current_id += 1
-            else:
-                break
 
     def write(self, id : int):
         current_id : int = id
@@ -91,13 +72,4 @@ class Learner:
             if isinstance(message, DecisionMessage):
                 self.receive_decision(message)
                 self.write(message.id_instance)
-
-    def run_file(self, filename: str):
-        while True:
-            msg : bytes = self.r.recv(2**16)
-            message : Message = pickle.loads(msg)
-            if isinstance(message, DecisionMessage):
-                self.receive_decision(message)
-                self.write_to_file(filename, message.id_instance)
-            
 

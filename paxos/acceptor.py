@@ -26,30 +26,27 @@ class Acceptor:
             self.s.sendto(pickle.dumps(message), self.config["proposers"])
 
     def handle_prepare(self, message : Message1A):
+        # Phase 1B
         with self.lock:
-            print(f"Acceptor {self.id}({message.id_instance}) received message 1A with c-rnd = {message.c_rnd}", flush=True)
             if message.c_rnd > self.round[message.id_instance]:
                 self.round[message.id_instance] = message.c_rnd
                 val, id = to_list_and_id(self.v_val[message.id_instance])
                 msg : Message1B = Message1B(message.id_instance, self.round[message.id_instance],
                                         self.v_rnd[message.id_instance], val, id)
-                print(f"Acceptor {self.id}({message.id_instance}) send message 1B with rnd = {self.round[message.id_instance]}, v-rnd = {self.v_rnd[message.id_instance]}, client id = {id}", flush=True)
                 self.send_message(msg)
             
     
     def handle_propose(self, message : Message2A):
+        # Phase 2B
         with self.lock:
-            print(f"Acceptor {self.id}({message.id_instance}) received message 2A with c-rnd = {message.c_rnd} and rnd = {self.round[message.id_instance]}", flush=True)
             if message.c_rnd >= self.round[message.id_instance]:
                 self.v_rnd[message.id_instance] = message.c_rnd
                 self.v_val[message.id_instance] = from_list_and_id((message.c_val, message.id_source))
                 val, id = to_list_and_id(self.v_val[message.id_instance])
                 msg : Message2B = Message2B(message.id_instance, self.v_rnd[message.id_instance], val, id)
-                print(f"Acceptor {self.id}({message.id_instance}) sends message 2B with v-rnd = {self.v_rnd[message.id_instance]}, client id = {id}", flush=True)
                 self.send_message(msg)
 
     def run(self):
-        print(f"Acceptor {self.id} start...", flush=True)
         while True:
             msg : bytes = self.r.recv(2**16)
             event : Message = pickle.loads(msg)
