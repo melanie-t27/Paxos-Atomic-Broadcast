@@ -32,12 +32,10 @@ class Learner:
                 # Update missing instance id
                 while self.d_val[self.missing_id_instance] != list():
                     self.missing_id_instance += 1
-                print(f"Learner {self.id} received decided value at {decision.id_instance}, send missing {self.missing_id_instance}", flush= True)
                 self.notify_proposer()
 
     def notify_proposer(self):
         with self.lock:
-            print(f"Learner {self.id} request proposers for {self.missing_id_instance}, since received {[key for key,l in self.d_val.items() if l != list()]}", flush = True)
             message: LearnerMessage = LearnerMessage(self.missing_id_instance)
             self.s.sendto(pickle.dumps(message), self.config["proposers"])
             self.timer = threading.Timer(1, self.notify_proposer)
@@ -52,7 +50,6 @@ class Learner:
                     for val in self.d_val[current_id]:
                         file.write(f"{val}\n")
                 self.last_printed = current_id
-                print(f"\n\nLearner {self.id} FINISHED WRITING INSTANCE {current_id}\n\n", flush=True)
         # If it is not the first time the learner is printing, then append to the file,
         # also checks if there are still pending values to print
         while self.last_printed + 1 == current_id:
@@ -62,7 +59,6 @@ class Learner:
                         for val in self.d_val[current_id]:
                             file.write(f"{val}\n")
                     self.last_printed = current_id
-                    print(f"\n\nLearner {self.id} FINISHED WRITING INSTANCE {current_id}\n\n", flush=True)
                     current_id += 1
             else:
                 break
@@ -73,7 +69,7 @@ class Learner:
         if current_id == 0 and self.d_val[0] != list() and self.last_printed == -1:
             with self.lock:
                 for val in self.d_val[current_id]:
-                    print(f"{val}\n")
+                    print(f"{val}")
                 self.last_printed = current_id
         # If it is not the first time the learner is printing, then append to the file,
         # also checks if there are still pending values to print
@@ -81,7 +77,7 @@ class Learner:
             if self.d_val[current_id] != list():
                 with self.lock:
                     for val in self.d_val[current_id]:
-                        print(f"{val}\n")
+                        print(f"{val}")
                     self.last_printed = current_id
                     current_id += 1
             else:
@@ -89,7 +85,6 @@ class Learner:
 
 
     def run(self):
-        print(f"Learner {self.id} start...", flush=True)
         while True:
             msg : bytes = self.r.recv(2**16)
             message : Message = pickle.loads(msg)
@@ -98,7 +93,6 @@ class Learner:
                 self.write(message.id_instance)
 
     def run_file(self, filename: str):
-        print(f"Learner {self.id} start...", flush=True)
         while True:
             msg : bytes = self.r.recv(2**16)
             message : Message = pickle.loads(msg)

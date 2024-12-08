@@ -27,20 +27,26 @@ class Client:
         
     
     def run(self):
+        print(f"Client {self.id} started...", flush = True)
         while True:
-            value : str = input().strip()
-            if not value:
-                break 
             try:
-                self.values.append(int(value))
-            except:
-                print("Please submit an integer value.")
-
+                value : str = input().strip()
+                if not value:  # Check if input is empty
+                    print("Empty input encountered.", flush=True)
+                    continue
+                try:
+                    self.values.append(int(value))
+                except:
+                    print("Please submit an integer value.", flush=True)
+            except EOFError:
+                print("\nEOF encountered.", flush=True)
+                break
             
 
-
+    '''
+        Method used just for testing purposes
+    '''
     def run_file(self, filename: str):
-        print(f"Client {self.id} start...")
         try:
             with open(filename, 'r') as file:
                 # Read all lines from the file
