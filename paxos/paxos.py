@@ -31,4 +31,5 @@ if __name__ == "__main__":
         rolefunc = Client
     else:
         raise Exception("Invalid input!")
-    rolefunc(id, config)
+    participant = rolefunc(id, config)
+    participant.run()
