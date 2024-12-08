@@ -22,7 +22,8 @@ class Acceptor:
         self.s = mcast_sender()
     
     def send_message(self, message : Message):
-        self.s.sendto(pickle.dumps(message), self.config["proposers"])
+        with self.lock:
+            self.s.sendto(pickle.dumps(message), self.config["proposers"])
 
     def handle_prepare(self, message : Message1A):
         with self.lock:
