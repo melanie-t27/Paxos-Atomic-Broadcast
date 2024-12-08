@@ -1,5 +1,25 @@
 # Paxos-Atomic-Broadcast
 
+# How to run
+
+Before running the implementation, ensure that the size of UDP datagrams is configured to its maximum allowable value. This prevents errors such as `Message Too Long`. On On macOS or Linux, you can set this with the following command:
+```
+sudo sysctl -w net.inet.udp.maxdgram=65535
+```
+For Windows or other operating systems, refer to system-specific instructions to adjust UDP buffer and datagram limits.
+
+
+Navigate to the main project folder (not `paxos` folder) and execute the following commands:
+```
+./run*.sh paxos 100
+# Wait for the run to finish.
+./check_all.sh 
+# This script validates the results of the run.
+```
+
+Inside the `paxos` folder, you will find the implementation details for all participants in the Paxos system.
+
+
 # Instructions
 
 These are some basic tests that can be used to check the correctness
