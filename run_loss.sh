@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Change the loss percentage here
-LOSS=0.5
+LOSS=0.7
 
 projdir="$1"
 conf="$(pwd)/paxos.conf"
