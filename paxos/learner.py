@@ -69,7 +69,7 @@ class Learner:
         if current_id == 0 and self.d_val[0] != list() and self.last_printed == -1:
             with self.lock:
                 for val in self.d_val[current_id]:
-                    print(f"{val}")
+                    print(f"{val}", flush=True)
                 self.last_printed = current_id
         # If it is not the first time the learner is printing, then append to the file,
         # also checks if there are still pending values to print
@@ -77,7 +77,7 @@ class Learner:
             if self.d_val[current_id] != list():
                 with self.lock:
                     for val in self.d_val[current_id]:
-                        print(f"{val}")
+                        print(f"{val}", flush=True)
                     self.last_printed = current_id
                     current_id += 1
             else:
